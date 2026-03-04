@@ -1,0 +1,28 @@
+// Fibonacci — recursive
+fun fib(n) {
+    if (n <= 1) { return n }
+    return fib(n - 1) + fib(n - 2)
+}
+
+print("Recursive:")
+let i = 0
+while (i < 10) {
+    print("fib(" + str(i) + ") = " + str(fib(i)))
+    i += 1
+}
+
+// Fibonacci — iterative using a list
+fun fibList(count) {
+    let nums = [0, 1]
+    let j = 2
+    while (j < count) {
+        let a = nums[j - 2]
+        let b = nums[j - 1]
+        nums.push(a + b)
+        j += 1
+    }
+    return nums
+}
+
+print("\nIterative list:")
+print(fibList(10))

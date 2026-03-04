@@ -1,0 +1,14 @@
+let d = {"name": "Alice", "age": 30, "active": true}
+print(d)
+print(d["name"])
+print(d["age"])
+d["age"] = 31
+print(d.get("age", 0))
+print(d.has("active"))
+print(d.has("missing"))
+d.set("score", 99)
+print(d.keys())
+print(d.values())
+d.remove("active")
+print(d.len())
+print(type(d))

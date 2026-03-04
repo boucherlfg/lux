@@ -1,0 +1,73 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\regli\\Desktop\\my_language\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{B6547593-D05F-4C61-9E19-53E360E1D95D}|LuxLang.Lib.csproj|c:\\users\\regli\\desktop\\my_language\\src\\interpreter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B6547593-D05F-4C61-9E19-53E360E1D95D}|LuxLang.Lib.csproj|solutionrelative:src\\interpreter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B6547593-D05F-4C61-9E19-53E360E1D95D}|LuxLang.Lib.csproj|c:\\users\\regli\\desktop\\my_language\\luxlang.lib.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{B6547593-D05F-4C61-9E19-53E360E1D95D}|LuxLang.Lib.csproj|solutionrelative:luxlang.lib.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{13DC83B1-2659-43A3-83B5-3A3FBCCDCB48}|LuxLang.csproj|c:\\users\\regli\\desktop\\my_language\\luxlang.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{13DC83B1-2659-43A3-83B5-3A3FBCCDCB48}|LuxLang.csproj|solutionrelative:luxlang.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Interpreter.cs",
+              "DocumentMoniker": "C:\\Users\\regli\\Desktop\\my_language\\src\\Interpreter.cs",
+              "RelativeDocumentMoniker": "src\\Interpreter.cs",
+              "ToolTip": "C:\\Users\\regli\\Desktop\\my_language\\src\\Interpreter.cs",
+              "RelativeToolTip": "src\\Interpreter.cs",
+              "ViewState": "AgIAAAEBAAAAAAAAAAAAAAEBAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T04:25:29.311Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "LuxLang.csproj",
+              "DocumentMoniker": "C:\\Users\\regli\\Desktop\\my_language\\LuxLang.csproj",
+              "RelativeDocumentMoniker": "LuxLang.csproj",
+              "ToolTip": "C:\\Users\\regli\\Desktop\\my_language\\LuxLang.csproj",
+              "RelativeToolTip": "LuxLang.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-03-04T03:39:07.584Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "LuxLang.Lib.csproj",
+              "DocumentMoniker": "C:\\Users\\regli\\Desktop\\my_language\\LuxLang.Lib.csproj",
+              "RelativeDocumentMoniker": "LuxLang.Lib.csproj",
+              "ToolTip": "C:\\Users\\regli\\Desktop\\my_language\\LuxLang.Lib.csproj",
+              "RelativeToolTip": "LuxLang.Lib.csproj",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAcAAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-03-04T03:38:07.487Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Lux</RootNamespace>
+    <AssemblyName>LuxLang</AssemblyName>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>1591</NoWarn>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <!-- All interpreter source — excludes the console entry point -->
+  <ItemGroup>
+    <Compile Include="src\Polyfills.cs" />
+    <Compile Include="src\Errors.cs" />
+    <Compile Include="src\Token.cs" />
+    <Compile Include="src\Ast.cs" />
+    <Compile Include="src\Lexer.cs" />
+    <Compile Include="src\Parser.cs" />
+    <Compile Include="src\LuxEnvironment.cs" />
+    <Compile Include="src\Interpreter.cs" />
+    <Compile Include="src\LuxBridge.cs" />
+    <Compile Include="src\BridgeTest.cs" />
+  </ItemGroup>
+</Project>

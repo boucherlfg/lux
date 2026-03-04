@@ -1,0 +1,19 @@
+// A small utility module to be imported
+
+fun add(a, b) { return a + b }
+fun sub(a, b) { return a - b }
+fun mul(a, b) { return a * b }
+
+fun clamp(val, lo, hi) {
+    if (val < lo) { return lo }
+    if (val > hi) { return hi }
+    return val
+}
+
+fun sum(list) {
+    let total = 0
+    for n in list { total += n }
+    return total
+}
+
+let PI = 3.14159265358979

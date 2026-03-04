@@ -1,0 +1,16 @@
+// ── import ────────────────────────────────────────────────────────────────────
+
+let math = import("mathutils.lux")
+
+print(math.add(3, 4))          // 7
+print(math.mul(6, 7))          // 42
+print(math.clamp(15, 0, 10))   // 10
+print(math.sum([1, 2, 3, 4, 5])) // 15
+print("PI = " + str(math.PI))  // PI = 3.14159265358979
+
+// import + error handling together
+try {
+    let missing = import("does_not_exist.lux")
+} catch (e) {
+    print("Import failed: " + e)
+}

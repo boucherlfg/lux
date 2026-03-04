@@ -1,0 +1,57 @@
+// 1. Function stored in a variable
+let add = fun(a, b) { return a + b }
+print(add(3, 4))
+
+// 2. Arrow lambda (single expression)
+let square = fun(x) => x * x
+print(square(9))
+
+// 3. Passed as an argument
+fun apply(f, x) { return f(x) }
+print(apply(square, 5))
+
+// 4. Returned from a function (closure)
+fun makeAdder(n) {
+    return fun(x) => x + n
+}
+let add10 = makeAdder(10)
+print(add10(7))
+
+// 5. Stored in a list (higher-order)
+let ops = [
+    fun(x) => x + 1,
+    fun(x) => x * 2,
+    fun(x) => x * x
+]
+for op in ops {
+    print(op(4))
+}
+
+// 6. Stored in a dict
+let math = {
+    "double": fun(x) => x * 2,
+    "negate": fun(x) => -x
+}
+print(math["double"](6))
+print(math["negate"](3))
+
+// 7. map() using lambdas
+fun map(list, f) {
+    let result = []
+    for item in list {
+        result.push(f(item))
+    }
+    return result
+}
+let nums = [1, 2, 3, 4, 5]
+print(map(nums, fun(x) => x * x))
+
+// 8. filter()
+fun filter(list, f) {
+    let result = []
+    for item in list {
+        if (f(item)) { result.push(item) }
+    }
+    return result
+}
+print(filter(nums, fun(x) => x > 2))

@@ -1,0 +1,11 @@
+C:\Users\regli\Desktop\my_language\bin\Debug\net48\lux.exe.config
+C:\Users\regli\Desktop\my_language\bin\Debug\net48\lux.exe
+C:\Users\regli\Desktop\my_language\bin\Debug\net48\lux.pdb
+C:\Users\regli\Desktop\my_language\obj\Debug\net48\LuxLang.csproj.AssemblyReference.cache
+C:\Users\regli\Desktop\my_language\obj\Debug\net48\LuxLang.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\regli\Desktop\my_language\obj\Debug\net48\LuxLang.AssemblyInfoInputs.cache
+C:\Users\regli\Desktop\my_language\obj\Debug\net48\LuxLang.AssemblyInfo.cs
+C:\Users\regli\Desktop\my_language\obj\Debug\net48\LuxLang.csproj.CoreCompileInputs.cache
+C:\Users\regli\Desktop\my_language\obj\Debug\net48\lux.exe
+C:\Users\regli\Desktop\my_language\obj\Debug\net48\lux.pdb
+C:\Users\regli\Desktop\my_language\obj\Debug\net48\lux.exe.config

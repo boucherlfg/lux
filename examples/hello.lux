@@ -1,0 +1,54 @@
+// Hello, World!
+print("Hello, World!")
+
+// Variables
+let name = "Alice"
+let age = 30
+print("Name: " + name + ", Age: " + str(age))
+
+// If / else if / else
+if (age >= 18) {
+    print("Adult")
+} else {
+    print("Minor")
+}
+
+// While loop with compound assignment
+let i = 0
+while (i < 5) {
+    print("count: " + str(i))
+    i += 1
+}
+
+// Functions
+fun greet(person) {
+    return "Hello, " + person + "!"
+}
+print(greet("World"))
+
+// Lists
+let fruits = ["apple", "banana", "cherry"]
+for fruit in fruits {
+    print(fruit)
+}
+fruits.push("mango")
+print("Total fruits: " + str(fruits.len()))
+
+// String methods
+let msg = "hello world"
+print(msg.upper())
+print("contains 'world': " + str(msg.contains("world")))
+
+// Nested / recursive function
+fun factorial(n) {
+    if (n <= 1) { return 1 }
+    return n * factorial(n - 1)
+}
+print("5! = " + str(factorial(5)))
+
+// range() + for loop
+let total = 0
+for n in range(1, 11) {
+    total += n
+}
+print("Sum 1..10 = " + str(total))

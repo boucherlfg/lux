@@ -1,0 +1,50 @@
+// ── throw / try / catch ────────────────────────────────────────────────────────
+
+// 1. Catch a thrown string
+try {
+    throw "something went wrong"
+} catch (e) {
+    print("Caught: " + e)
+}
+
+// 2. Catch a thrown object
+try {
+    let err = {"code": 404, "msg": "not found"}
+    throw err
+} catch (e) {
+    print("Error code: " + str(e["code"]) + " — " + e["msg"])
+}
+
+// 3. Catch a runtime error (e.g. division by zero)
+try {
+    let x = 1 / 0
+} catch (e) {
+    print("Runtime error caught: " + e)
+}
+
+// 4. throw inside a function
+fun divide(a, b) {
+    if (b == 0) { throw "division by zero" }
+    return a / b
+}
+
+try {
+    print(divide(10, 2))
+    print(divide(5, 0))
+} catch (e) {
+    print("Caught from function: " + e)
+}
+
+// 5. Re-throw
+fun strictParse(s) {
+    let n = num(s)
+    if (n == 0 && s != "0") { throw "not a number: " + s }
+    return n
+}
+
+try {
+    print(strictParse("42"))
+    print(strictParse("abc"))
+} catch (e) {
+    print("Parse failed: " + e)
+}

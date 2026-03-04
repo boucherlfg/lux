@@ -1,0 +1,8 @@
+<Project>
+  <!-- Give LuxLang.Lib its own obj/ and bin/ so it doesn't clash with the exe project -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'LuxLang.Lib'">
+    <MSBuildProjectExtensionsPath>$(MSBuildProjectDirectory)\obj\Lib\</MSBuildProjectExtensionsPath>
+    <BaseIntermediateOutputPath>obj\Lib\</BaseIntermediateOutputPath>
+    <BaseOutputPath>bin\Lib\</BaseOutputPath>
+  </PropertyGroup>
+</Project>

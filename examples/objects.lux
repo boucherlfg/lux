@@ -1,0 +1,43 @@
+// ── Named constructor ─────────────────────────────────────────────────────────
+
+fun Vec2(x, y) {
+    this.x = x
+    this.y = y
+    this.length = fun() => (this.x * this.x + this.y * this.y)
+    this.add    = fun(other) {
+        return Vec2(this.x + other.x, this.y + other.y)
+    }
+    this.toString = fun() => "(" + str(this.x) + ", " + str(this.y) + ")"
+}
+
+let a = Vec2(3, 4)
+let b = Vec2(1, 2)
+print(a.toString())
+print(a.length())
+let c = a.add(b)
+print(c.toString())
+print(type(a))
+
+// ── Anonymous object (IIFE — immediately invoked fun) ─────────────────────────
+
+let point = fun() {
+    this.x = 10
+    this.y = 20
+    this.scale = fun(n) { return Vec2(this.x * n, this.y * n) }
+}()
+
+print(point)
+print(point.x)
+let scaled = point.scale(3)
+print(scaled.toString())
+
+// ── Arrow shorthand also works ────────────────────────────────────────────────
+
+let config = fun() {
+    this.debug   = true
+    this.version = "1.0"
+    this.tag     = fun() => "[" + this.version + "]"
+}()
+
+print(config.tag())
+print(config.debug)
