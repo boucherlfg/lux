@@ -9,6 +9,18 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>1591</NoWarn>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+
+    <!-- NuGet package metadata -->
+    <PackageId>LuxLang</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>boucherlfg</Authors>
+    <Description>Embeddable Lux scripting language interpreter for .NET</Description>
+    <PackageTags>scripting;language;interpreter;embedded</PackageTags>
+    <RepositoryUrl>https://github.com/boucherlfg/lux</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <!-- All interpreter source — excludes the console entry point -->
