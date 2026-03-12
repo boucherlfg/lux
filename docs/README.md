@@ -9,6 +9,7 @@ Lux is a dynamically-typed, interpreted scripting language with a clean C-like s
 - [Built-in Functions](builtins.md) — `print`, `range`, `import`, `getType`, etc.
 - [Error Handling](error-handling.md) — `try`, `catch`, `throw`
 - [Modules](modules.md) — `import` and namespaces
+- [Embedding in C#](embedding.md) — Using the DLL from C# code
 
 ## Quick Start
 

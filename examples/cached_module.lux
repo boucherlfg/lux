@@ -1,0 +1,2 @@
+print("cached_module executed")   // should print only once
+let value = 42

@@ -65,26 +65,43 @@ namespace Lux
         /// </summary>
         public object? Call(Interpreter interp, List<object?> args, LuxObject? receiver = null)
         {
-            var env = new LuxEnvironment(_closure);
-            // Bind parameters
-            for (int i = 0; i < _decl.Params.Count; i++)
-                env.Define(_decl.Params[i], args[i]);
-            // Inject 'this': use the receiver (method call) or a fresh object
-            var thisObj = receiver ?? new LuxObject();
-            env.Define("this", thisObj);
-            try
+            LuxFunction fn = this;
+            while (true)
             {
-                interp.ExecuteBlock(_decl.Body.Body, env);
+                var env = new LuxEnvironment(fn._closure);
+                // Bind parameters
+                for (int i = 0; i < fn._decl.Params.Count; i++)
+                    env.Define(fn._decl.Params[i], args[i]);
+                // Inject 'this': use the receiver (method call) or a fresh object
+                var thisObj = receiver ?? new LuxObject();
+                env.Define("this", thisObj);
+                try
+                {
+                    interp.ExecuteBlock(fn._decl.Body.Body, env);
+                }
+                catch (ReturnException ret) { return ret.Value; }
+                catch (TailCallException tc)
+                {
+                    if (tc.Callee is LuxFunction nextFn)
+                    {
+                        // Reuse this stack frame — no C# recursion
+                        fn       = nextFn;
+                        args     = tc.Args;
+                        receiver = tc.Receiver;
+                        continue;
+                    }
+                    // Native callee — just call it normally
+                    return tc.Callee.Call(interp, tc.Args);
+                }
+                // Implicit return: if 'this' has any fields, return it (constructor pattern)
+                if (thisObj.Fields.Count > 0)
+                {
+                    if (fn._decl.Name != "(anonymous)")
+                        thisObj.Fields["ctor"] = fn;
+                    return thisObj;
+                }
+                return null;
             }
-            catch (ReturnException ret) { return ret.Value; }
-            // Implicit return: if 'this' has any fields, return it (constructor pattern)
-            if (thisObj.Fields.Count > 0)
-            {
-                if (_decl.Name != "(anonymous)")
-                    thisObj.Fields["ctor"] = this;
-                return thisObj;
-            }
-            return null;
         }
 
         // ICallable interface — plain call with no receiver
@@ -185,6 +202,16 @@ namespace Lux
         public LuxThrowException(object? value, int line) : base("") { Value = value; Line = line; }
     }
 
+    /// <summary>Thrown internally when a tail call is detected; caught by the <c>LuxFunction</c> trampoline loop.</summary>
+    public sealed class TailCallException : Exception
+    {
+        public ICallable     Callee   { get; }
+        public List<object?> Args     { get; }
+        public LuxObject?    Receiver { get; }
+        public TailCallException(ICallable callee, List<object?> args, LuxObject? receiver)
+            : base("") { Callee = callee; Args = args; Receiver = receiver; }
+    }
+
     // ── Interpreter ───────────────────────────────────────────────────────────
 
     /// <summary>
@@ -232,6 +259,12 @@ namespace Lux
         /// Populated automatically by <c>import()</c>; seed with the root file's path via <see cref="FilePath"/>.
         /// </summary>
         public HashSet<string> ImportStack { get; set; } = new HashSet<string>();
+
+        /// <summary>
+        /// Cache of already-executed modules: canonical path → exported namespace object.
+        /// Shared across all child interpreters in the same session so each file runs at most once.
+        /// </summary>
+        public Dictionary<string, LuxObject> ImportCache { get; set; } = new Dictionary<string, LuxObject>();
 
         public Interpreter()
         {
@@ -292,6 +325,9 @@ namespace Lux
                     : Path.Combine(baseDir, relativePath));
                 if (!File.Exists(fullPath))
                     throw new LuxError($"Cannot import '{relativePath}': file not found", 0);
+                // Return cached namespace if this file was already imported
+                if (interp.ImportCache.TryGetValue(fullPath, out LuxObject? cached))
+                    return cached;
                 // Build the ancestor set: everything that was already open, plus the current file
                 var childStack = new HashSet<string>(interp.ImportStack);
                 if (interp.FilePath != null) childStack.Add(interp.FilePath);
@@ -301,10 +337,12 @@ namespace Lux
                 child.BasePath = Path.GetDirectoryName(fullPath);
                 child.FilePath = fullPath;
                 child.ImportStack = childStack;
+                child.ImportCache = interp.ImportCache;
                 child.Run(File.ReadAllText(fullPath));
                 var ns = new LuxObject();
                 foreach (var name in child.GetUserGlobalNames())
                     ns.Fields[name] = child.GetGlobal(name);
+                interp.ImportCache[fullPath] = ns;
                 return ns;
             }));
             Reg("getType", new NativeFunc("getType", 1, (interp, a) => MakeTypeObject(a[0], interp)));
@@ -463,7 +501,13 @@ namespace Lux
                 case ExprStmt s:      Eval(s.Expression);                               break;
                 case LetStmt s:       _env.Define(s.Name, Eval(s.Init));               break;
                 case FunDecl s:       _env.Define(s.Name, new LuxFunction(s, _env));   break;
-                case ReturnStmt s:    throw new ReturnException(s.Value != null ? Eval(s.Value) : null);
+                case ReturnStmt s:
+                    if (s.Value is CallExpr scx)
+                    {
+                        var (callee, callArgs, callReceiver) = ResolveCall(scx);
+                        throw new TailCallException(callee, callArgs, callReceiver);
+                    }
+                    throw new ReturnException(s.Value != null ? Eval(s.Value) : null);
                 case BreakStmt _:     throw new BreakException();
                 case ContinueStmt _:  throw new ContinueException();
                 case ThrowStmt s:     throw new LuxThrowException(Eval(s.Value), s.Line);
@@ -684,17 +728,20 @@ namespace Lux
             };
         }
 
-        private object? EvalCall(CallExpr e)
+        /// <summary>
+        /// Resolve a call expression to its callee, evaluated arguments, and optional receiver,
+        /// without actually invoking the callee. Used by both <see cref="EvalCall"/> and the
+        /// tail-call path in <see cref="Execute"/>.
+        /// </summary>
+        private (ICallable Callee, List<object?> Args, LuxObject? Receiver) ResolveCall(CallExpr e)
         {
-            var args = new List<object?>();
-            foreach (var arg in e.Args) args.Add(Eval(arg));
+            var args = e.Args.ConvertAll(a => Eval(a));
 
-            // Method call: obj.method(args) — bind obj as 'this'
             if (e.Callee is GetExpr gx)
             {
-                var receiver = Eval(gx.Object);
+                var recv = Eval(gx.Object);
                 object? method;
-                if (receiver is LuxObject luxObj)
+                if (recv is LuxObject luxObj)
                 {
                     if (!luxObj.Fields.TryGetValue(gx.Property, out method))
                         throw new LuxError($"Object has no method '{gx.Property}'", e.Line);
@@ -703,29 +750,28 @@ namespace Lux
                 {
                     method = EvalGet(gx);
                 }
-                if (method is LuxFunction lf)
-                {
-                    if (lf.Arity != -1 && lf.Arity != args.Count)
-                        throw new LuxError($"Expected {lf.Arity} argument(s) but got {args.Count}", e.Line);
-                    return lf.Call(this, args, receiver as LuxObject);
-                }
-                if (method is ICallable native)
-                {
-                    if (native.Arity != -1 && native.Arity != args.Count)
-                        throw new LuxError($"Expected {native.Arity} argument(s) but got {args.Count}", e.Line);
-                    return native.Call(this, args);
-                }
-                throw new LuxError($"'{Stringify(method)}' is not callable", e.Line);
+                if (method is not ICallable callable)
+                    throw new LuxError($"'{Stringify(method)}' is not callable", e.Line);
+                if (callable.Arity != -1 && callable.Arity != args.Count)
+                    throw new LuxError($"Expected {callable.Arity} argument(s) but got {args.Count}", e.Line);
+                return (callable, args, recv as LuxObject);
             }
-
-            var callee = Eval(e.Callee);
-            if (callee is ICallable fn)
+            else
             {
+                var callee = Eval(e.Callee);
+                if (callee is not ICallable fn)
+                    throw new LuxError($"'{Stringify(callee)}' is not callable", e.Line);
                 if (fn.Arity != -1 && fn.Arity != args.Count)
                     throw new LuxError($"Expected {fn.Arity} argument(s) but got {args.Count}", e.Line);
-                return fn.Call(this, args);
+                return (fn, args, null);
             }
-            throw new LuxError($"'{Stringify(callee)}' is not callable", e.Line);
+        }
+
+        private object? EvalCall(CallExpr e)
+        {
+            var (callee, args, receiver) = ResolveCall(e);
+            if (callee is LuxFunction lf) return lf.Call(this, args, receiver);
+            return callee.Call(this, args);
         }
 
         private object? EvalGet(GetExpr e)

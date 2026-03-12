@@ -1,0 +1,29 @@
+// Without TCO, these would stack-overflow at a few thousand frames.
+// With the trampoline they run in constant stack space.
+
+// Tail-recursive factorial (accumulator pattern)
+fun factorial(n, acc) {
+    if (n <= 1) { return acc }
+    return factorial(n - 1, n * acc)
+}
+print(factorial(10, 1))       // 3628800
+print(factorial(20, 1))       // 2432902008176640000
+
+// Tail-recursive sum 1..n
+fun sum(n, acc) {
+    if (n <= 0) { return acc }
+    return sum(n - 1, acc + n)
+}
+print(sum(100000, 0))         // 5000050000  — would overflow without TCO
+
+// Mutual tail recursion
+fun isEven(n) {
+    if (n == 0) { return true }
+    return isOdd(n - 1)
+}
+fun isOdd(n) {
+    if (n == 0) { return false }
+    return isEven(n - 1)
+}
+print(isEven(10000))          // true
+print(isOdd(9999))            // true

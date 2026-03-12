@@ -1,0 +1,7 @@
+// Import the same module twice — the file should only execute once.
+let a = import("cached_module.lux")
+let b = import("cached_module.lux")
+
+print(a.value)          // 42
+print(b.value)          // 42
+print(a.value == b.value) // true

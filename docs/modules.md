@@ -72,4 +72,4 @@ try {
 ## Notes
 
 - Circular imports are detected and raise a runtime error: `Circular import detected: '...' is already being imported`.
-- Each `import()` call re-executes the module file from scratch (no caching).
+- Each file is executed **at most once** per session. Subsequent `import()` calls for the same path return the cached namespace object without re-executing the file.
