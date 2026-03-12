@@ -19,6 +19,9 @@ namespace Lux
         // Logical
         And, Or, Bang,
 
+        // Bitwise
+        BitAnd, BitOr, BitNot, ShiftLeft, ShiftRight,
+
         // Assignment
         Equal, PlusEqual, MinusEqual, Arrow,
 

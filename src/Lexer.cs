@@ -75,10 +75,11 @@ namespace Lux
                     else if (Match('>')) AddToken(TokenType.Arrow);
                     else                 AddToken(TokenType.Equal);
                     break;
-                case '<': AddToken(Match('=') ? TokenType.LessEqual    : TokenType.Less);    break;
-                case '>': AddToken(Match('=') ? TokenType.GreaterEqual : TokenType.Greater); break;
-                case '&': if (Match('&')) AddToken(TokenType.And); break;
-                case '|': if (Match('|')) AddToken(TokenType.Or);  break;
+                case '<': AddToken(Match('<') ? TokenType.ShiftLeft  : Match('=') ? TokenType.LessEqual    : TokenType.Less);    break;
+                case '>': AddToken(Match('>') ? TokenType.ShiftRight : Match('=') ? TokenType.GreaterEqual : TokenType.Greater); break;
+                case '&': AddToken(Match('&') ? TokenType.And    : TokenType.BitAnd); break;
+                case '|': AddToken(Match('|') ? TokenType.Or     : TokenType.BitOr);  break;
+                case '~': AddToken(TokenType.BitNot); break;
                 case '"': ScanString(); break;
                 case '\n': _line++; break;
                 case ' ': case '\r': case '\t': break;

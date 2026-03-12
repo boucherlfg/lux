@@ -230,8 +230,22 @@ namespace Lux
 
         private Expr ParseAnd()
         {
+            var left = ParseBitOr();
+            while (Match(TokenType.And)) { var op = Previous(); left = new LogicalExpr(left, op, ParseBitOr()); }
+            return left;
+        }
+
+        private Expr ParseBitOr()
+        {
+            var left = ParseBitAnd();
+            while (Match(TokenType.BitOr)) { var op = Previous(); left = new BinaryExpr(left, op, ParseBitAnd()); }
+            return left;
+        }
+
+        private Expr ParseBitAnd()
+        {
             var left = ParseEquality();
-            while (Match(TokenType.And)) { var op = Previous(); left = new LogicalExpr(left, op, ParseEquality()); }
+            while (Match(TokenType.BitAnd)) { var op = Previous(); left = new BinaryExpr(left, op, ParseEquality()); }
             return left;
         }
 
@@ -245,8 +259,16 @@ namespace Lux
 
         private Expr ParseComparison()
         {
-            var left = ParseTerm();
+            var left = ParseShift();
             while (Match(TokenType.Less, TokenType.LessEqual, TokenType.Greater, TokenType.GreaterEqual))
+            { var op = Previous(); left = new BinaryExpr(left, op, ParseShift()); }
+            return left;
+        }
+
+        private Expr ParseShift()
+        {
+            var left = ParseTerm();
+            while (Match(TokenType.ShiftLeft, TokenType.ShiftRight))
             { var op = Previous(); left = new BinaryExpr(left, op, ParseTerm()); }
             return left;
         }
@@ -269,7 +291,7 @@ namespace Lux
 
         private Expr ParseUnary()
         {
-            if (Match(TokenType.Bang, TokenType.Minus))
+            if (Match(TokenType.Bang, TokenType.Minus, TokenType.BitNot))
                 return new UnaryExpr(Previous(), ParseUnary());
             return ParseCall();
         }

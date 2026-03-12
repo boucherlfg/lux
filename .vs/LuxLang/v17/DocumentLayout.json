@@ -3,8 +3,16 @@
   "WorkspaceRootPath": "C:\\Users\\regli\\Desktop\\my_language\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{B6547593-D05F-4C61-9E19-53E360E1D95D}|LuxLang.Lib.csproj|c:\\users\\regli\\desktop\\my_language\\src\\interpreter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B6547593-D05F-4C61-9E19-53E360E1D95D}|LuxLang.Lib.csproj|solutionrelative:src\\interpreter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{13DC83B1-2659-43A3-83B5-3A3FBCCDCB48}|LuxLang.csproj|c:\\users\\regli\\desktop\\my_language\\src\\luxbridge.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{13DC83B1-2659-43A3-83B5-3A3FBCCDCB48}|LuxLang.csproj|solutionrelative:src\\luxbridge.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{13DC83B1-2659-43A3-83B5-3A3FBCCDCB48}|LuxLang.csproj|c:\\users\\regli\\desktop\\my_language\\src\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{13DC83B1-2659-43A3-83B5-3A3FBCCDCB48}|LuxLang.csproj|solutionrelative:src\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{13DC83B1-2659-43A3-83B5-3A3FBCCDCB48}|LuxLang.csproj|c:\\users\\regli\\desktop\\my_language\\src\\interpreter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{13DC83B1-2659-43A3-83B5-3A3FBCCDCB48}|LuxLang.csproj|solutionrelative:src\\interpreter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B6547593-D05F-4C61-9E19-53E360E1D95D}|LuxLang.Lib.csproj|c:\\users\\regli\\desktop\\my_language\\luxlang.lib.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
@@ -31,19 +39,45 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "LuxBridge.cs",
+              "DocumentMoniker": "C:\\Users\\regli\\Desktop\\my_language\\src\\LuxBridge.cs",
+              "RelativeDocumentMoniker": "src\\LuxBridge.cs",
+              "ToolTip": "C:\\Users\\regli\\Desktop\\my_language\\src\\LuxBridge.cs",
+              "RelativeToolTip": "src\\LuxBridge.cs",
+              "ViewState": "AgIAAEUAAAAAAAAAAIA2wGYAAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-12T01:55:45.571Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\regli\\Desktop\\my_language\\src\\Program.cs",
+              "RelativeDocumentMoniker": "src\\Program.cs",
+              "ToolTip": "C:\\Users\\regli\\Desktop\\my_language\\src\\Program.cs",
+              "RelativeToolTip": "src\\Program.cs",
+              "ViewState": "AgIAACsAAAAAAAAAAAAQwDMAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-12T01:55:06.625Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "Interpreter.cs",
               "DocumentMoniker": "C:\\Users\\regli\\Desktop\\my_language\\src\\Interpreter.cs",
               "RelativeDocumentMoniker": "src\\Interpreter.cs",
               "ToolTip": "C:\\Users\\regli\\Desktop\\my_language\\src\\Interpreter.cs",
               "RelativeToolTip": "src\\Interpreter.cs",
-              "ViewState": "AgIAAAEBAAAAAAAAAAAAAAEBAAAJAAAAAAAAAA==",
+              "ViewState": "AgIAANcAAAAAAAAAAAAIwOkAAAAeAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-04T04:25:29.311Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "LuxLang.csproj",
               "DocumentMoniker": "C:\\Users\\regli\\Desktop\\my_language\\LuxLang.csproj",
               "RelativeDocumentMoniker": "LuxLang.csproj",
@@ -55,7 +89,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "LuxLang.Lib.csproj",
               "DocumentMoniker": "C:\\Users\\regli\\Desktop\\my_language\\LuxLang.Lib.csproj",
               "RelativeDocumentMoniker": "LuxLang.Lib.csproj",

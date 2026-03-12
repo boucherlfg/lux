@@ -25,6 +25,7 @@ static bool RunFile(string path)
     }
     var interp = new Interpreter();
     interp.BasePath = Path.GetDirectoryName(Path.GetFullPath(path));
+    interp.FilePath = Path.GetFullPath(path);
     return RunSource(File.ReadAllText(path), interp);
 }
 

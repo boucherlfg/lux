@@ -9,3 +9,4 @@ C:\Users\regli\Desktop\my_language\obj\Debug\net48\LuxLang.csproj.CoreCompileInp
 C:\Users\regli\Desktop\my_language\obj\Debug\net48\lux.exe
 C:\Users\regli\Desktop\my_language\obj\Debug\net48\lux.pdb
 C:\Users\regli\Desktop\my_language\obj\Debug\net48\lux.exe.config
+C:\Users\regli\Desktop\my_language\obj\Debug\net48\LuxLang.sourcelink.json

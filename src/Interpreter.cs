@@ -224,6 +224,15 @@ namespace Lux
         /// </summary>
         public string? BasePath { get; set; }
 
+        /// <summary>Canonical path of the file this interpreter is executing. Used for circular-import detection.</summary>
+        public string? FilePath { get; set; }
+
+        /// <summary>
+        /// Canonical paths of every file currently open in the import chain that led to this interpreter.
+        /// Populated automatically by <c>import()</c>; seed with the root file's path via <see cref="FilePath"/>.
+        /// </summary>
+        public HashSet<string> ImportStack { get; set; } = new HashSet<string>();
+
         public Interpreter()
         {
             _env = _globals;
@@ -278,13 +287,20 @@ namespace Lux
             {
                 string relativePath = Stringify(a[0]);
                 string baseDir = interp.BasePath ?? Directory.GetCurrentDirectory();
-                string fullPath = Path.IsPathRooted(relativePath)
+                string fullPath = Path.GetFullPath(Path.IsPathRooted(relativePath)
                     ? relativePath
-                    : Path.Combine(baseDir, relativePath);
+                    : Path.Combine(baseDir, relativePath));
                 if (!File.Exists(fullPath))
                     throw new LuxError($"Cannot import '{relativePath}': file not found", 0);
+                // Build the ancestor set: everything that was already open, plus the current file
+                var childStack = new HashSet<string>(interp.ImportStack);
+                if (interp.FilePath != null) childStack.Add(interp.FilePath);
+                if (childStack.Contains(fullPath))
+                    throw new LuxError($"Circular import detected: '{relativePath}' is already being imported", 0);
                 var child = new Interpreter();
-                child.BasePath = Path.GetDirectoryName(Path.GetFullPath(fullPath));
+                child.BasePath = Path.GetDirectoryName(fullPath);
+                child.FilePath = fullPath;
+                child.ImportStack = childStack;
                 child.Run(File.ReadAllText(fullPath));
                 var ns = new LuxObject();
                 foreach (var name in child.GetUserGlobalNames())
@@ -292,6 +308,7 @@ namespace Lux
                 return ns;
             }));
             Reg("getType", new NativeFunc("getType", 1, (interp, a) => MakeTypeObject(a[0], interp)));
+            Reg("floor",  new NativeFunc("floor",   1, (_, a) => Math.Floor(EnsureNum(a[0], new Token(TokenType.Identifier, "floor", null, 0)))));
         }
 
         private static LuxObject MakeTypeObject(object? value, Interpreter interp)
@@ -429,7 +446,7 @@ namespace Lux
             foreach (var s in stmts) Execute(s);
         }
 
-        public void ExecuteBlock(List<Stmt> stmts, LuxEnvironment env)
+        internal void ExecuteBlock(List<Stmt> stmts, LuxEnvironment env)
         {
             var prev = _env;
             _env = env;
@@ -439,7 +456,7 @@ namespace Lux
 
         // ── Statement execution ───────────────────────────────────────────────
 
-        private void Execute(Stmt stmt)
+        internal void Execute(Stmt stmt)
         {
             switch (stmt)
             {
@@ -548,7 +565,7 @@ namespace Lux
 
         // ── Expression evaluation ─────────────────────────────────────────────
 
-        public object? Eval(Expr expr)
+        internal object? Eval(Expr expr)
         {
             return expr switch
             {
@@ -639,6 +656,10 @@ namespace Lux
                 TokenType.LessEqual    => NumComp(left, right, e.Op, (a, b) => a <= b),
                 TokenType.EqualEqual   => IsEqual(left, right),
                 TokenType.BangEqual    => !IsEqual(left, right),
+                TokenType.BitAnd       => (double)((long)EnsureNum(left, e.Op) &  (long)EnsureNum(right, e.Op)),
+                TokenType.BitOr        => (double)((long)EnsureNum(left, e.Op) |  (long)EnsureNum(right, e.Op)),
+                TokenType.ShiftLeft    => (double)((long)EnsureNum(left, e.Op) << (int)EnsureNum(right, e.Op)),
+                TokenType.ShiftRight   => (double)((long)EnsureNum(left, e.Op) >> (int)EnsureNum(right, e.Op)),
                 _ => throw new LuxError($"Unknown operator '{e.Op.Lexeme}'", e.Op.Line),
             };
         }
@@ -656,8 +677,9 @@ namespace Lux
             var right = Eval(e.Right);
             return e.Op.Type switch
             {
-                TokenType.Minus => -(double)EnsureNum(right, e.Op),
-                TokenType.Bang  => !IsTruthy(right),
+                TokenType.Minus  => -(double)EnsureNum(right, e.Op),
+                TokenType.Bang   => !IsTruthy(right),
+                TokenType.BitNot => (double)(~(long)EnsureNum(right, e.Op)),
                 _ => throw new LuxError($"Unknown unary operator '{e.Op.Lexeme}'", e.Op.Line),
             };
         }
@@ -882,14 +904,14 @@ namespace Lux
             => v is double d ? d
                : throw new LuxError($"Operand for '{op.Lexeme}' must be a number, got {TypeOf(v)}", op.Line);
 
-        public static bool IsEqual(object? a, object? b)
+        internal static bool IsEqual(object? a, object? b)
         {
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
             return a.Equals(b);
         }
 
-        public static bool IsTruthy(object? v)
+        internal static bool IsTruthy(object? v)
         {
             if (v == null)       return false;
             if (v is bool bl)    return bl;
@@ -909,7 +931,7 @@ namespace Lux
             throw new LuxError($"'{TypeOf(v)}' has no length", 0);
         }
 
-        public static string TypeOf(object? v)
+        internal static string TypeOf(object? v)
         {
             if (v == null)       return "null";
             if (v is double)     return "number";
@@ -967,7 +989,7 @@ namespace Lux
             throw new LuxError($"Dict keys must be a number, string, or bool — got '{TypeOf(v)}'", line);
         }
 
-        public static string Stringify(object? v)
+        internal static string Stringify(object? v)
         {
             if (v == null)       return "null";
             if (v is double d)   return d % 1 == 0 ? ((long)d).ToString() : d.ToString(CultureInfo.InvariantCulture);

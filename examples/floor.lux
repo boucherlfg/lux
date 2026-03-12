@@ -1,0 +1,4 @@
+print(floor(3.7))    // 3
+print(floor(3.0))    // 3
+print(floor(-1.2))   // -2
+print(floor(0.9))    // 0

@@ -20,7 +20,7 @@ namespace Lux
         // ── C# → Lux type conversion ──────────────────────────────────────────
 
         /// <summary>Convert any C# value to a Lux-compatible value.</summary>
-        public static object? ToLux(object? value)
+        internal static object? ToLux(object? value)
         {
             if (value == null) return null;
 
@@ -67,10 +67,10 @@ namespace Lux
         // ── Lux → C# type conversion ──────────────────────────────────────────
 
         /// <summary>Convert a Lux value to a C# type T.</summary>
-        public static T FromLux<T>(object? value) => (T)FromLux(value, typeof(T))!;
+        internal static T FromLux<T>(object? value) => (T)FromLux(value, typeof(T))!;
 
         /// <summary>Convert a Lux value to a specific C# type (with coercion).</summary>
-        public static object? FromLux(object? value, Type target)
+        internal static object? FromLux(object? value, Type target)
         {
             if (value == null)
                 return target.IsValueType ? Activator.CreateInstance(target) : null;
@@ -100,7 +100,7 @@ namespace Lux
         /// <see cref="LiveProperty"/> slots so every Lux read/write hits the live C# object.
         /// Also covers public fields, which <see cref="Wrap"/> silently skips.
         /// </summary>
-        public static LuxObject WrapLive(object csObj)
+        internal static LuxObject WrapLive(object csObj)
         {
             var obj  = new LuxObject();
             var type = csObj.GetType();
@@ -154,7 +154,7 @@ namespace Lux
         /// methods in a LuxObject. Property values are snapshotted at wrap time;
         /// method calls are live (invoked on the original object).
         /// </summary>
-        public static LuxObject Wrap(object csObj)
+        internal static LuxObject Wrap(object csObj)
         {
             var obj  = new LuxObject();
             var type = csObj.GetType();
