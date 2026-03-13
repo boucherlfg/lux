@@ -4,6 +4,9 @@
         <name>LuxLang</name>
     </assembly>
     <members>
+        <member name="P:Lux.LuxError.CallStack">
+            <summary>Snapshot of the Lux call stack at the point the error was raised.</summary>
+        </member>
         <member name="T:Lux.IfLetStmt">
             <summary>if-let binding: evaluates <c>Init</c>, binds result to <c>Var</c> if truthy, else runs optional <c>Else</c> branch (may be another <c>IfLetStmt</c>, <c>IfStmt</c>, or a plain <c>BlockStmt</c>).</summary>
         </member>
@@ -69,6 +72,12 @@
             to intercept script-level errors.
             </summary>
         </member>
+        <member name="P:Lux.LuxThrowException.CallStack">
+            <summary>Snapshot of the Lux call stack at the point <c>throw</c> was executed.</summary>
+        </member>
+        <member name="T:Lux.TailCallException">
+            <summary>Thrown internally when a tail call is detected; caught by the <c>LuxFunction</c> trampoline loop.</summary>
+        </member>
         <member name="T:Lux.Interpreter">
              <summary>
              Tree-walking interpreter for the Lux scripting language.
@@ -95,11 +104,43 @@
              </list>
              </summary>
         </member>
+        <member name="F:Lux.Interpreter._currentInterp">
+            <summary>
+            The interpreter that is currently executing on this thread.
+            Used by <see cref="T:Lux.LuxError"/> and <see cref="T:Lux.LuxThrowException"/> to snapshot
+            the Lux call stack at the moment an error is raised.
+            </summary>
+        </member>
+        <member name="M:Lux.Interpreter.SnapshotCallStack">
+            <summary>Returns a list of human-readable stack-frame strings, most-recent first.</summary>
+        </member>
+        <member name="M:Lux.Interpreter.CaptureCallStack">
+            <summary>
+            Captures a call-stack snapshot from the currently active interpreter on this thread.
+            Returns an empty list when called outside of an interpreter execution.
+            Called automatically by <see cref="T:Lux.LuxError"/> and <see cref="T:Lux.LuxThrowException"/>.
+            </summary>
+        </member>
         <member name="P:Lux.Interpreter.BasePath">
             <summary>
             Base directory used to resolve relative paths in <c>import()</c> calls.
             Set automatically when running a file via <see cref="M:Lux.Interpreter.Run(System.String)"/>; override if
             you supply source code directly from a string.
+            </summary>
+        </member>
+        <member name="P:Lux.Interpreter.FilePath">
+            <summary>Canonical path of the file this interpreter is executing. Used for circular-import detection.</summary>
+        </member>
+        <member name="P:Lux.Interpreter.ImportStack">
+            <summary>
+            Canonical paths of every file currently open in the import chain that led to this interpreter.
+            Populated automatically by <c>import()</c>; seed with the root file's path via <see cref="P:Lux.Interpreter.FilePath"/>.
+            </summary>
+        </member>
+        <member name="P:Lux.Interpreter.ImportCache">
+            <summary>
+            Cache of already-executed modules: canonical path → exported namespace object.
+            Shared across all child interpreters in the same session so each file runs at most once.
             </summary>
         </member>
         <member name="M:Lux.Interpreter.Define(System.String,System.Object)">
@@ -113,6 +154,13 @@
             Returns the names of all globals defined by user scripts (excludes built-ins such as
             <c>print</c>, <c>import</c>, <c>getType</c>, etc.).
             Used by <c>import()</c> to build the exported namespace object.
+            </summary>
+        </member>
+        <member name="M:Lux.Interpreter.ResolveCall(Lux.CallExpr)">
+            <summary>
+            Resolve a call expression to its callee, evaluated arguments, and optional receiver,
+            without actually invoking the callee. Used by both <see cref="M:Lux.Interpreter.EvalCall(Lux.CallExpr)"/> and the
+            tail-call path in <see cref="M:Lux.Interpreter.Execute(Lux.Stmt)"/>.
             </summary>
         </member>
         <member name="T:Lux.LuxBridge">

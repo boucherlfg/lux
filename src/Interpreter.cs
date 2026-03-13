@@ -197,9 +197,16 @@ namespace Lux
     /// </summary>
     public sealed class LuxThrowException : Exception
     {
-        public object? Value { get; }
-        public int     Line  { get; }
-        public LuxThrowException(object? value, int line) : base("") { Value = value; Line = line; }
+        public object?               Value     { get; }
+        public int                   Line      { get; }
+        /// <summary>Snapshot of the Lux call stack at the point <c>throw</c> was executed.</summary>
+        public IReadOnlyList<string> CallStack { get; }
+        public LuxThrowException(object? value, int line) : base("")
+        {
+            Value     = value;
+            Line      = line;
+            CallStack = Interpreter.CaptureCallStack();
+        }
     }
 
     /// <summary>Thrown internally when a tail call is detected; caught by the <c>LuxFunction</c> trampoline loop.</summary>
@@ -243,6 +250,41 @@ namespace Lux
         private readonly LuxEnvironment _globals = new LuxEnvironment();
         private readonly HashSet<string> _builtinNames = new HashSet<string>();
         private LuxEnvironment _env;
+
+        // ── Call-stack tracking ───────────────────────────────────────────────
+
+        private readonly List<(string Name, int Line)> _callStack = new List<(string, int)>();
+
+        /// <summary>
+        /// The interpreter that is currently executing on this thread.
+        /// Used by <see cref="LuxError"/> and <see cref="LuxThrowException"/> to snapshot
+        /// the Lux call stack at the moment an error is raised.
+        /// </summary>
+        [System.ThreadStatic]
+        private static Interpreter? _currentInterp;
+
+        private void PushCall(string name, int line) => _callStack.Add((name, line));
+        private void PopCall() { if (_callStack.Count > 0) _callStack.RemoveAt(_callStack.Count - 1); }
+
+        /// <summary>Returns a list of human-readable stack-frame strings, most-recent first.</summary>
+        internal List<string> SnapshotCallStack()
+        {
+            var frames = new List<string>();
+            for (int i = _callStack.Count - 1; i >= 0; i--)
+            {
+                var (name, line) = _callStack[i];
+                frames.Add($"at {name} (line {line})");
+            }
+            return frames;
+        }
+
+        /// <summary>
+        /// Captures a call-stack snapshot from the currently active interpreter on this thread.
+        /// Returns an empty list when called outside of an interpreter execution.
+        /// Called automatically by <see cref="LuxError"/> and <see cref="LuxThrowException"/>.
+        /// </summary>
+        internal static List<string> CaptureCallStack()
+            => _currentInterp?.SnapshotCallStack() ?? new List<string>();
 
         /// <summary>
         /// Base directory used to resolve relative paths in <c>import()</c> calls.
@@ -479,9 +521,18 @@ namespace Lux
 
         public void Run(string source)
         {
-            var tokens = new Lexer(source).Tokenize();
-            var stmts  = new Parser(tokens).Parse();
-            foreach (var s in stmts) Execute(s);
+            var prev = _currentInterp;
+            _currentInterp = this;
+            try
+            {
+                var tokens = new Lexer(source).Tokenize();
+                var stmts  = new Parser(tokens).Parse();
+                foreach (var s in stmts) Execute(s);
+            }
+            finally
+            {
+                _currentInterp = prev;
+            }
         }
 
         internal void ExecuteBlock(List<Stmt> stmts, LuxEnvironment env)
@@ -544,14 +595,26 @@ namespace Lux
             }
             catch (LuxThrowException ex)
             {
+                var errObj = new LuxObject();
+                errObj.Fields["value"] = ex.Value;
+                errObj.Fields["line"]  = (double)ex.Line;
+                var stackList = new LuxList();
+                foreach (var frame in ex.CallStack) stackList.Items.Add(frame);
+                errObj.Fields["stacktrace"] = stackList;
                 var env = new LuxEnvironment(_env);
-                env.Define(s.ErrorVar, ex.Value);
+                env.Define(s.ErrorVar, errObj);
                 ExecuteBlock(s.Catch.Body, env);
             }
             catch (LuxError ex)
             {
+                var errObj = new LuxObject();
+                errObj.Fields["value"] = ex.Message;
+                errObj.Fields["line"]  = (double)ex.Line;
+                var stackList = new LuxList();
+                foreach (var frame in ex.CallStack) stackList.Items.Add(frame);
+                errObj.Fields["stacktrace"] = stackList;
                 var env = new LuxEnvironment(_env);
-                env.Define(s.ErrorVar, ex.Message);
+                env.Define(s.ErrorVar, errObj);
                 ExecuteBlock(s.Catch.Body, env);
             }
         }
@@ -770,8 +833,20 @@ namespace Lux
         private object? EvalCall(CallExpr e)
         {
             var (callee, args, receiver) = ResolveCall(e);
-            if (callee is LuxFunction lf) return lf.Call(this, args, receiver);
-            return callee.Call(this, args);
+            string callName;
+            if      (e.Callee is GetExpr   gx) callName = gx.Property;
+            else if (e.Callee is IdentExpr ix) callName = ix.Name;
+            else                               callName = "<anonymous>";
+            PushCall(callName, e.Line);
+            try
+            {
+                if (callee is LuxFunction lf) return lf.Call(this, args, receiver);
+                return callee.Call(this, args);
+            }
+            finally
+            {
+                PopCall();
+            }
         }
 
         private object? EvalGet(GetExpr e)

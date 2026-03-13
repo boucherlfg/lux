@@ -136,16 +136,26 @@ When reading back from Lux, `CallFunction<T>` and `GetGlobal<T>` coerce automati
 
 ## Error handling
 
-Lux errors surface as `LuxError` (runtime), `ParseError`, or `LexError`, all in the `Lux` namespace. They carry a `Line` number.
+Lux errors surface as `LuxError` (runtime), `ParseError`, or `LexError`, all in the `Lux` namespace.
+`LuxError` carries a `Line` number and a `CallStack` (a list of human-readable frame strings).
+An uncaught Lux `throw` surfaces as `LuxThrowException`, which also exposes `Value`, `Line`, and `CallStack`.
 
 ```csharp
 try
 {
     interp.Run(source);
 }
+catch (LuxThrowException ex)
+{
+    Console.Error.WriteLine($"Unhandled throw on line {ex.Line}: {ex.Value}");
+    foreach (var frame in ex.CallStack)
+        Console.Error.WriteLine("  " + frame);
+}
 catch (LuxError ex)
 {
     Console.Error.WriteLine($"Runtime error on line {ex.Line}: {ex.Message}");
+    foreach (var frame in ex.CallStack)
+        Console.Error.WriteLine("  " + frame);
 }
 catch (ParseError ex)
 {

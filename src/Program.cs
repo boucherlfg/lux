@@ -54,8 +54,23 @@ static bool RunSource(string source, Interpreter interp)
         interp.Run(source);
         return true;
     }
-    catch (LexError e)   { Console.Error.WriteLine($"[Lex Error]     line {e.Line}: {e.Message}"); }
-    catch (ParseError e) { Console.Error.WriteLine($"[Parse Error]   line {e.Line}: {e.Message}"); }
-    catch (LuxError e)   { Console.Error.WriteLine($"[Runtime Error] line {e.Line}: {e.Message}"); }
+    catch (LexError e)
+    {
+        Console.Error.WriteLine($"[Lex Error]     line {e.Line}: {e.Message}");
+    }
+    catch (ParseError e)
+    {
+        Console.Error.WriteLine($"[Parse Error]   line {e.Line}: {e.Message}");
+    }
+    catch (LuxThrowException e)
+    {
+        Console.Error.WriteLine($"[Unhandled Throw] line {e.Line}: {Interpreter.Stringify(e.Value)}");
+        foreach (var frame in e.CallStack) Console.Error.WriteLine("  " + frame);
+    }
+    catch (LuxError e)
+    {
+        Console.Error.WriteLine($"[Runtime Error] line {e.Line}: {e.Message}");
+        foreach (var frame in e.CallStack) Console.Error.WriteLine("  " + frame);
+    }
     return false;
 }

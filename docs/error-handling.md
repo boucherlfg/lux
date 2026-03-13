@@ -17,17 +17,25 @@ throw {"code": 404, "msg": "not found"}
 
 ## try / catch
 
-`catch` binds the thrown value (or runtime error message) to a variable.
+`catch` binds a **error object** to the given variable. The error object always has three fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `value` | any | The thrown payload (string, dict, object, …) or the runtime-error message |
+| `line` | number | The source line where the error was raised |
+| `stacktrace` | list of strings | Call-stack frames at the time of the error, most-recent first |
 
 ```lux
 try {
     // code that might fail
 } catch (e) {
-    // e holds the thrown value or error message string
+    print(e.value)       // the thrown value or error message
+    print(e.line)        // line number of the throw / runtime error
+    print(e.stacktrace)  // list of "at <fn> (line <n>)" strings
 }
 ```
 
-Runtime errors (e.g. division by zero, type errors) are also caught and exposed as a string message.
+Runtime errors (e.g. division by zero, type errors) are also caught and their message is exposed as `e.value`.
 
 ---
 
@@ -39,7 +47,8 @@ Runtime errors (e.g. division by zero, type errors) are also caught and exposed 
 try {
     throw "something went wrong"
 } catch (e) {
-    print("Caught: " + e)
+    print("Caught: " + e.value)     // "something went wrong"
+    print("Line: "  + str(e.line))  // source line of the throw
 }
 ```
 
@@ -49,7 +58,7 @@ try {
 try {
     throw {"code": 404, "msg": "not found"}
 } catch (e) {
-    print("Error " + str(e["code"]) + ": " + e["msg"])
+    print("Error " + str(e.value["code"]) + ": " + e.value["msg"])
 }
 ```
 
@@ -59,7 +68,22 @@ try {
 try {
     let x = 1 / 0
 } catch (e) {
-    print("Runtime error: " + e)
+    print("Runtime error: " + e.value)  // "Division by zero"
+    print("Line: " + str(e.line))
+}
+```
+
+### Inspecting the stack trace
+
+```lux
+fun level2() { throw "deep error" }
+fun level1() { level2() }
+
+try {
+    level1()
+} catch (e) {
+    print(e.value)                  // "deep error"
+    print(e.stacktrace)             // ["at level2 (line N)", "at level1 (line M)"]
 }
 ```
 
@@ -75,8 +99,26 @@ try {
     print(divide(10, 2))   // 5
     print(divide(5, 0))    // throws
 } catch (e) {
-    print("Caught: " + e)
+    print("Caught: "      + e.value)
+    print("Line: "        + str(e.line))
+    print("Stack trace: " + str(e.stacktrace))
 }
+```
+
+---
+
+## Uncaught errors
+
+If a `throw` or runtime error is not caught by any `try/catch`, the interpreter prints the error to stderr with its full stack trace:
+
+```
+[Unhandled Throw] line 6: something went wrong
+  at inner (line 2)
+  at outer (line 9)
+
+[Runtime Error] line 6: Division by zero
+  at inner (line 2)
+  at outer (line 9)
 ```
 
 ---
@@ -86,3 +128,5 @@ try {
 - There is no `finally` block.
 - `catch` catches both explicit `throw` values and interpreter-level runtime errors.
 - A `throw` inside a `catch` block will propagate to an outer `try/catch` or terminate the script.
+- The `stacktrace` list is empty when the error is raised at the top level (outside any function call).
+

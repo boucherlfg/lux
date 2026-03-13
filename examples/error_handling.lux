@@ -1,10 +1,15 @@
 // ── throw / try / catch ────────────────────────────────────────────────────────
+// Each catch variable is now an error object with three fields:
+//   e.value      — the thrown value (string, object, etc.) or runtime error message
+//   e.line       — line number where the error was raised
+//   e.stacktrace — list of call-stack frame strings (most-recent first)
 
 // 1. Catch a thrown string
 try {
     throw "something went wrong"
 } catch (e) {
-    print("Caught: " + e)
+    print("Caught: " + e.value)
+    print("  line: " + str(e.line))
 }
 
 // 2. Catch a thrown object
@@ -12,17 +17,18 @@ try {
     let err = {"code": 404, "msg": "not found"}
     throw err
 } catch (e) {
-    print("Error code: " + str(e["code"]) + " — " + e["msg"])
+    print("Error code: " + str(e.value["code"]) + " — " + e.value["msg"])
 }
 
 // 3. Catch a runtime error (e.g. division by zero)
 try {
     let x = 1 / 0
 } catch (e) {
-    print("Runtime error caught: " + e)
+    print("Runtime error caught: " + e.value)
+    print("  line: " + str(e.line))
 }
 
-// 4. throw inside a function
+// 4. throw inside a function — stacktrace shows call site
 fun divide(a, b) {
     if (b == 0) { throw "division by zero" }
     return a / b
@@ -32,7 +38,9 @@ try {
     print(divide(10, 2))
     print(divide(5, 0))
 } catch (e) {
-    print("Caught from function: " + e)
+    print("Caught from function: " + e.value)
+    print("  line: " + str(e.line))
+    print("  stacktrace: " + str(e.stacktrace))
 }
 
 // 5. Re-throw
@@ -46,5 +54,5 @@ try {
     print(strictParse("42"))
     print(strictParse("abc"))
 } catch (e) {
-    print("Parse failed: " + e)
+    print("Parse failed: " + e.value)
 }
