@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Lux
@@ -5,9 +6,14 @@ namespace Lux
     public class LuxEnvironment
     {
         private readonly Dictionary<string, object?> _values = new Dictionary<string, object?>();
+        private readonly Func<IReadOnlyList<string>>? _captureStack;
         public LuxEnvironment? Enclosing { get; }
 
-        public LuxEnvironment(LuxEnvironment? enclosing = null) => Enclosing = enclosing;
+        public LuxEnvironment(LuxEnvironment? enclosing = null, Func<IReadOnlyList<string>>? captureStack = null)
+        {
+            Enclosing     = enclosing;
+            _captureStack = captureStack ?? enclosing?._captureStack;
+        }
 
         public void Define(string name, object? value) => _values[name] = value;
 
@@ -17,14 +23,16 @@ namespace Lux
         {
             if (_values.TryGetValue(name, out object? value)) return value;
             if (Enclosing != null) return Enclosing.Get(name, line);
-            throw new LuxError($"Undefined variable '{name}'", line);
+            throw new LuxError($"Undefined variable '{name}'", line,
+                _captureStack?.Invoke() ?? System.Array.Empty<string>());
         }
 
         public void Set(string name, object? value, int line)
         {
             if (_values.ContainsKey(name)) { _values[name] = value; return; }
             if (Enclosing != null)         { Enclosing.Set(name, value, line); return; }
-            throw new LuxError($"Undefined variable '{name}'", line);
+            throw new LuxError($"Undefined variable '{name}'", line,
+                _captureStack?.Invoke() ?? System.Array.Empty<string>());
         }
     }
 }

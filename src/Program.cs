@@ -79,9 +79,17 @@ static void RunRepl()
 
 static bool RunSource(string source, Interpreter interp)
 {
+    var syntaxErrors = new Interpreter().Validate(source);
+    if (syntaxErrors.Count > 0)
+    {
+        foreach (var e in syntaxErrors)
+            Console.Error.WriteLine(e.ToString());
+        return false;
+    }
+
     try
     {
-        interp.Run(source);
+        interp.Evaluate(source);
         return true;
     }
     catch (LexError e)

@@ -12,7 +12,7 @@ namespace Lux
     ///   var interp = new Interpreter();
     ///   interp.Register("log", (Action&lt;string&gt;)(msg =&gt; Console.WriteLine(msg)));
     ///   interp.RegisterObject("time", DateTime.Now);
-    ///   interp.Run(source);
+    ///   interp.Evaluate(source);
     ///   double result = interp.CallFunction&lt;double&gt;("myLuxFun", 1, 2);
     /// </summary>
     public static class LuxBridge

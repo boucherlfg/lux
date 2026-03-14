@@ -1,0 +1,45 @@
+// Tests that runtime errors report the correct line number and kind field.
+
+// 1. len() on an invalid type
+try {
+    len(42)
+} catch (e) {
+    print("kind:  " + e.kind)           // runtime
+    print("value: " + e.value)          // 'number' has no length
+    print("line:  " + str(e.line))      // line 5
+}
+
+// 2. num() on an unconvertible string
+try {
+    num("notanumber")
+} catch (e) {
+    print("kind:  " + e.kind)           // runtime
+    print("value: " + e.value)          // Cannot convert 'string' to number
+    print("line:  " + str(e.line))      // line 14
+}
+
+// 3. range() with a non-number argument
+try {
+    range("a", 5)
+} catch (e) {
+    print("kind:  " + e.kind)           // runtime
+    print("line:  " + str(e.line))      // line 23
+}
+
+// 4. assert() failure
+try {
+    assert(false, "bad value")
+} catch (e) {
+    print("kind:  " + e.kind)           // runtime
+    print("value: " + e.value)          // bad value
+    print("line:  " + str(e.line))      // line 31
+}
+
+// 5. Explicit throw — kind should be "throw"
+try {
+    throw "oops"
+} catch (e) {
+    print("kind:  " + e.kind)           // throw
+    print("value: " + e.value)          // oops
+    print("line:  " + str(e.line))      // line 39
+}

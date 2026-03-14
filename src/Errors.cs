@@ -20,11 +20,15 @@ namespace Lux
         public int Line { get; }
         /// <summary>Snapshot of the Lux call stack at the point the error was raised.</summary>
         public IReadOnlyList<string> CallStack { get; }
-        public LuxError(string message, int line) : base(message)
+
+        public LuxError(string message, int line, IReadOnlyList<string> callStack) : base(message)
         {
             Line      = line;
-            CallStack = Interpreter.CaptureCallStack();
+            CallStack = callStack;
         }
+
+        /// <summary>Convenience overload for external/embedding code where no call stack is available.</summary>
+        public LuxError(string message, int line) : this(message, line, System.Array.Empty<string>()) { }
     }
 
     /// <summary>A single syntax error returned by <see cref="Interpreter.Validate"/>.</summary>

@@ -201,11 +201,11 @@ namespace Lux
         public int                   Line      { get; }
         /// <summary>Snapshot of the Lux call stack at the point <c>throw</c> was executed.</summary>
         public IReadOnlyList<string> CallStack { get; }
-        public LuxThrowException(object? value, int line) : base("")
+        public LuxThrowException(object? value, int line, IReadOnlyList<string> callStack) : base("")
         {
             Value     = value;
             Line      = line;
-            CallStack = Interpreter.CaptureCallStack();
+            CallStack = callStack;
         }
     }
 
@@ -228,7 +228,7 @@ namespace Lux
     /// <code>
     ///   var interp = new Interpreter();
     ///   interp.Register("log", (Action&lt;string&gt;)(msg => Console.WriteLine(msg)));
-    ///   interp.Run(source);
+    ///   interp.Evaluate(source);
     ///   double result = interp.CallFunction&lt;double&gt;("myLuxFun", 1, 2);
     /// </code>
     ///
@@ -247,21 +247,14 @@ namespace Lux
     /// </summary>
     public class Interpreter
     {
-        private readonly LuxEnvironment _globals = new LuxEnvironment();
+        private readonly LuxEnvironment _globals;
         private readonly HashSet<string> _builtinNames = new HashSet<string>();
         private LuxEnvironment _env;
 
         // ── Call-stack tracking ───────────────────────────────────────────────
 
         private readonly List<(string Name, int Line)> _callStack = new List<(string, int)>();
-
-        /// <summary>
-        /// The interpreter that is currently executing on this thread.
-        /// Used by <see cref="LuxError"/> and <see cref="LuxThrowException"/> to snapshot
-        /// the Lux call stack at the moment an error is raised.
-        /// </summary>
-        [System.ThreadStatic]
-        private static Interpreter? _currentInterp;
+        private int _currentLine;
 
         private void PushCall(string name, int line) => _callStack.Add((name, line));
         private void PopCall() { if (_callStack.Count > 0) _callStack.RemoveAt(_callStack.Count - 1); }
@@ -278,13 +271,8 @@ namespace Lux
             return frames;
         }
 
-        /// <summary>
-        /// Captures a call-stack snapshot from the currently active interpreter on this thread.
-        /// Returns an empty list when called outside of an interpreter execution.
-        /// Called automatically by <see cref="LuxError"/> and <see cref="LuxThrowException"/>.
-        /// </summary>
-        internal static List<string> CaptureCallStack()
-            => _currentInterp?.SnapshotCallStack() ?? new List<string>();
+        /// <summary>Creates a <see cref="LuxError"/> with the current call-stack snapshot attached.</summary>
+        private LuxError Error(string message, int line) => new LuxError(message, line, SnapshotCallStack());
 
         /// <summary>
         /// Base directory used to resolve relative paths in <c>import()</c> calls.
@@ -310,7 +298,8 @@ namespace Lux
 
         public Interpreter()
         {
-            _env = _globals;
+            _globals = new LuxEnvironment(captureStack: SnapshotCallStack);
+            _env     = _globals;
             RegisterBuiltins();
         }
 
@@ -335,7 +324,7 @@ namespace Lux
         {
             if (callable is LuxFunction lf)  return lf.Call(this, args, null);
             if (callable is ICallable fn)    return fn.Call(this, args);
-            throw new LuxError("Value is not callable", 0);
+            throw Error("Value is not callable", 0);
         }
 
         private void RegisterBuiltins()
@@ -355,7 +344,7 @@ namespace Lux
             Reg("range",  new NativeFunc("range",  -1, (_, a) => MakeRange(a)));
             Reg("assert", new NativeFunc("assert",  2, (_, a) =>
             {
-                if (!IsTruthy(a[0])) throw new LuxError(Stringify(a[1]), 0);
+                if (!IsTruthy(a[0])) throw Error(Stringify(a[1]), _currentLine);
                 return null;
             }));
             Reg("import", new NativeFunc("import",  1, (interp, a) =>
@@ -366,7 +355,7 @@ namespace Lux
                     ? relativePath
                     : Path.Combine(baseDir, relativePath));
                 if (!File.Exists(fullPath))
-                    throw new LuxError($"Cannot import '{relativePath}': file not found", 0);
+                    throw Error($"Cannot import '{relativePath}': file not found", _currentLine);
                 // Return cached namespace if this file was already imported
                 if (interp.ImportCache.TryGetValue(fullPath, out LuxObject? cached))
                     return cached;
@@ -374,13 +363,13 @@ namespace Lux
                 var childStack = new HashSet<string>(interp.ImportStack);
                 if (interp.FilePath != null) childStack.Add(interp.FilePath);
                 if (childStack.Contains(fullPath))
-                    throw new LuxError($"Circular import detected: '{relativePath}' is already being imported", 0);
+                    throw Error($"Circular import detected: '{relativePath}' is already being imported", _currentLine);
                 var child = new Interpreter();
                 child.BasePath = Path.GetDirectoryName(fullPath);
                 child.FilePath = fullPath;
                 child.ImportStack = childStack;
                 child.ImportCache = interp.ImportCache;
-                child.Run(File.ReadAllText(fullPath));
+                child.Evaluate(File.ReadAllText(fullPath));
                 var ns = new LuxObject();
                 foreach (var name in child.GetUserGlobalNames())
                     ns.Fields[name] = child.GetGlobal(name);
@@ -388,7 +377,7 @@ namespace Lux
                 return ns;
             }));
             Reg("getType", new NativeFunc("getType", 1, (interp, a) => MakeTypeObject(a[0], interp)));
-            Reg("floor",  new NativeFunc("floor",   1, (_, a) => Math.Floor(EnsureNum(a[0], new Token(TokenType.Identifier, "floor", null, 0)))));
+            Reg("floor",  new NativeFunc("floor",   1, (_, a) => Math.Floor(EnsureNum(a[0], new Token(TokenType.Identifier, "floor", null, _currentLine)))));
         }
 
         private static LuxObject MakeTypeObject(object? value, Interpreter interp)
@@ -412,7 +401,7 @@ namespace Lux
             {
                 string key = Stringify(a[1]);
                 if (a[0] is LuxObject o) return (object)o.Fields.ContainsKey(key);
-                if (a[0] is LuxDict d)   return (object)d.Items.ContainsKey(EnsureDictKey(a[1], 0));
+                if (a[0] is LuxDict d)   return (object)d.Items.ContainsKey(interp.EnsureDictKey(a[1], interp._currentLine));
                 return (object)false;
             });
 
@@ -423,17 +412,17 @@ namespace Lux
                 if (a[0] is LuxObject o)
                 {
                     if (!o.Fields.TryGetValue(key, out object? v))
-                        throw new LuxError($"Object has no field '{key}'", 0);
+                        throw new LuxError($"Object has no field '{key}'", interp._currentLine, interp.SnapshotCallStack());
                     return v is LiveProperty lp ? lp.Getter() : v;
                 }
                 if (a[0] is LuxDict d)
                 {
-                    var dk = EnsureDictKey(a[1], 0);
+                    var dk = interp.EnsureDictKey(a[1], interp._currentLine);
                     if (!d.Items.TryGetValue(dk, out object? dv))
-                        throw new LuxError($"Dict has no key '{key}'", 0);
+                        throw new LuxError($"Dict has no key '{key}'", interp._currentLine, interp.SnapshotCallStack());
                     return dv;
                 }
-                throw new LuxError($"'{TypeOf(a[0])}' does not support getField", 0);
+                throw new LuxError($"'{TypeOf(a[0])}' does not support getField", interp._currentLine, interp.SnapshotCallStack());
             });
 
             // setField(instance, name, value) — mutates instance
@@ -444,7 +433,7 @@ namespace Lux
                 {
                     if (o.Fields.TryGetValue(key, out object? existing) && existing is LiveProperty lp)
                     {
-                        if (lp.Setter == null) throw new LuxError($"Field '{key}' is read-only", 0);
+                        if (lp.Setter == null) throw new LuxError($"Field '{key}' is read-only", interp._currentLine, interp.SnapshotCallStack());
                         lp.Setter(a[2]);
                     }
                     else
@@ -455,10 +444,10 @@ namespace Lux
                 }
                 if (a[0] is LuxDict d)
                 {
-                    d.Items[EnsureDictKey(a[1], 0)] = a[2];
+                    d.Items[interp.EnsureDictKey(a[1], interp._currentLine)] = a[2];
                     return null;
                 }
-                throw new LuxError($"'{TypeOf(a[0])}' does not support setField", 0);
+                throw new LuxError($"'{TypeOf(a[0])}' does not support setField", interp._currentLine, interp.SnapshotCallStack());
             });
 
             // getMethod(instance, name) — returns a MethodInfo object
@@ -469,15 +458,15 @@ namespace Lux
                 if (a[0] is LuxObject o)
                 {
                     if (!o.Fields.TryGetValue(key, out fn))
-                        throw new LuxError($"Object has no method '{key}'", 0);
+                        throw new LuxError($"Object has no method '{key}'", interp._currentLine, interp.SnapshotCallStack());
                     if (fn is LiveProperty lp) fn = lp.Getter();
                 }
                 else
                 {
-                    throw new LuxError($"'{TypeOf(a[0])}' does not support getMethod", 0);
+                    throw new LuxError($"'{TypeOf(a[0])}' does not support getMethod", interp._currentLine, interp.SnapshotCallStack());
                 }
                 if (fn is not ICallable)
-                    throw new LuxError($"Field '{key}' is not callable", 0);
+                    throw new LuxError($"Field '{key}' is not callable", interp._currentLine, interp.SnapshotCallStack());
 
                 return MakeMethodInfo(key, fn, interp);
             });
@@ -503,7 +492,7 @@ namespace Lux
             m.Fields["invoke"] = new NativeFunc("invoke", -1, (_, a) =>
             {
                 if (a.Count == 0)
-                    throw new LuxError("invoke() requires at least one argument (the instance)", 0);
+                    throw new LuxError("invoke() requires at least one argument (the instance)", interp._currentLine, interp.SnapshotCallStack());
                 var receiver = a[0] as LuxObject;
                 var callArgs = a.GetRange(1, a.Count - 1);
 
@@ -511,7 +500,7 @@ namespace Lux
                     return lf.Call(interp, callArgs, receiver);
                 if (fn is ICallable native)
                     return native.Call(interp, callArgs);
-                throw new LuxError($"'{name}' is not callable", 0);
+                throw new LuxError($"'{name}' is not callable", interp._currentLine, interp.SnapshotCallStack());
             });
 
             return m;
@@ -519,20 +508,11 @@ namespace Lux
 
         // ── Public interface ──────────────────────────────────────────────────
 
-        public void Run(string source)
+        public void Evaluate(string source)
         {
-            var prev = _currentInterp;
-            _currentInterp = this;
-            try
-            {
-                var tokens = new Lexer(source).Tokenize();
-                var stmts  = new Parser(tokens).Parse();
-                foreach (var s in stmts) Execute(s);
-            }
-            finally
-            {
-                _currentInterp = prev;
-            }
+            var tokens = new Lexer(source).Tokenize();
+            var stmts  = new Parser(tokens).Parse();
+            foreach (var s in stmts) Execute(s);
         }
 
         /// <summary>
@@ -573,14 +553,14 @@ namespace Lux
                     throw new ReturnException(s.Value != null ? Eval(s.Value) : null);
                 case BreakStmt _:     throw new BreakException();
                 case ContinueStmt _:  throw new ContinueException();
-                case ThrowStmt s:     throw new LuxThrowException(Eval(s.Value), s.Line);
+                case ThrowStmt s:     throw new LuxThrowException(Eval(s.Value), s.Line, SnapshotCallStack());
                 case BlockStmt s:     ExecuteBlock(s.Body, new LuxEnvironment(_env));  break;
                 case IfStmt s:        ExecuteIf(s);                                     break;
                 case WhileStmt s:     ExecuteWhile(s);                                  break;
                 case ForStmt s:       ExecuteFor(s);                                    break;
                 case TryCatchStmt s:  ExecuteTryCatch(s);                               break;
                 case IfLetStmt s:     ExecuteIfLet(s);                                  break;
-                default: throw new LuxError($"Unknown statement: {stmt.GetType().Name}", 0);
+                default: throw Error($"Unknown statement: {stmt.GetType().Name}", 0);
             }
         }
 
@@ -608,6 +588,7 @@ namespace Lux
             catch (LuxThrowException ex)
             {
                 var errObj = new LuxObject();
+                errObj.Fields["kind"]  = "throw";
                 errObj.Fields["value"] = ex.Value;
                 errObj.Fields["line"]  = (double)ex.Line;
                 var stackList = new LuxList();
@@ -620,6 +601,7 @@ namespace Lux
             catch (LuxError ex)
             {
                 var errObj = new LuxObject();
+                errObj.Fields["kind"]  = "runtime";
                 errObj.Fields["value"] = ex.Message;
                 errObj.Fields["line"]  = (double)ex.Line;
                 var stackList = new LuxList();
@@ -669,7 +651,7 @@ namespace Lux
             }
             else
             {
-                throw new LuxError($"'{TypeOf(iterable)}' is not iterable", s.Line);
+                throw Error($"'{TypeOf(iterable)}' is not iterable", s.Line);
             }
 
             foreach (var item in items)
@@ -706,7 +688,7 @@ namespace Lux
                 CallExpr cx         => EvalCall(cx),
                 GetExpr gx          => EvalGet(gx),
                 IndexExpr ix        => EvalIndex(ix),
-                _                   => throw new LuxError($"Unknown expression: {expr.GetType().Name}", 0),
+                _                   => throw Error($"Unknown expression: {expr.GetType().Name}", 0),
             };
         }
 
@@ -733,7 +715,7 @@ namespace Lux
                 dict.Items[key] = val;
                 return val;
             }
-            throw new LuxError("Index assignment only works on lists and dicts", e.Line);
+            throw Error("Index assignment only works on lists and dicts", e.Line);
         }
 
         private object? EvalSet(SetExpr e)
@@ -744,14 +726,14 @@ namespace Lux
             {
                 if (luxObj.Fields.TryGetValue(e.Property, out var existing) && existing is LiveProperty lp)
                 {
-                    if (lp.Setter == null) throw new LuxError($"Property '{e.Property}' is read-only", e.Line);
+                    if (lp.Setter == null) throw Error($"Property '{e.Property}' is read-only", e.Line);
                     lp.Setter(val);
                     return val;
                 }
                 luxObj.Fields[e.Property] = val;
                 return val;
             }
-            throw new LuxError($"Cannot set property '{e.Property}' on '{TypeOf(obj)}'", e.Line);
+            throw Error($"Cannot set property '{e.Property}' on '{TypeOf(obj)}'", e.Line);
         }
 
         private object? EvalBinary(BinaryExpr e)
@@ -765,7 +747,7 @@ namespace Lux
                 TokenType.Star         => NumOp(left, right, e.Op, (a, b) => a * b),
                 TokenType.Slash        => NumOp(left, right, e.Op, (a, b) =>
                 {
-                    if (b == 0) throw new LuxError("Division by zero", e.Op.Line);
+                    if (b == 0) throw Error("Division by zero", e.Op.Line);
                     return a / b;
                 }),
                 TokenType.Percent      => NumOp(left, right, e.Op, (a, b) => a % b),
@@ -779,7 +761,7 @@ namespace Lux
                 TokenType.BitOr        => (double)((long)EnsureNum(left, e.Op) |  (long)EnsureNum(right, e.Op)),
                 TokenType.ShiftLeft    => (double)((long)EnsureNum(left, e.Op) << (int)EnsureNum(right, e.Op)),
                 TokenType.ShiftRight   => (double)((long)EnsureNum(left, e.Op) >> (int)EnsureNum(right, e.Op)),
-                _ => throw new LuxError($"Unknown operator '{e.Op.Lexeme}'", e.Op.Line),
+                _ => throw Error($"Unknown operator '{e.Op.Lexeme}'", e.Op.Line),
             };
         }
 
@@ -788,7 +770,7 @@ namespace Lux
             var left = Eval(e.Left);
             if (e.Op.Type == TokenType.Or)  return IsTruthy(left) ? left : Eval(e.Right);
             if (e.Op.Type == TokenType.And) return !IsTruthy(left) ? left : Eval(e.Right);
-            throw new LuxError("Unknown logical operator", e.Op.Line);
+            throw Error("Unknown logical operator", e.Op.Line);
         }
 
         private object? EvalUnary(UnaryExpr e)
@@ -799,7 +781,7 @@ namespace Lux
                 TokenType.Minus  => -(double)EnsureNum(right, e.Op),
                 TokenType.Bang   => !IsTruthy(right),
                 TokenType.BitNot => (double)(~(long)EnsureNum(right, e.Op)),
-                _ => throw new LuxError($"Unknown unary operator '{e.Op.Lexeme}'", e.Op.Line),
+                _ => throw Error($"Unknown unary operator '{e.Op.Lexeme}'", e.Op.Line),
             };
         }
 
@@ -819,25 +801,25 @@ namespace Lux
                 if (recv is LuxObject luxObj)
                 {
                     if (!luxObj.Fields.TryGetValue(gx.Property, out method))
-                        throw new LuxError($"Object has no method '{gx.Property}'", e.Line);
+                        throw Error($"Object has no method '{gx.Property}'", e.Line);
                 }
                 else
                 {
                     method = EvalGet(gx);
                 }
                 if (method is not ICallable callable)
-                    throw new LuxError($"'{Stringify(method)}' is not callable", e.Line);
+                    throw Error($"'{Stringify(method)}' is not callable", e.Line);
                 if (callable.Arity != -1 && callable.Arity != args.Count)
-                    throw new LuxError($"Expected {callable.Arity} argument(s) but got {args.Count}", e.Line);
+                    throw Error($"Expected {callable.Arity} argument(s) but got {args.Count}", e.Line);
                 return (callable, args, recv as LuxObject);
             }
             else
             {
                 var callee = Eval(e.Callee);
                 if (callee is not ICallable fn)
-                    throw new LuxError($"'{Stringify(callee)}' is not callable", e.Line);
+                    throw Error($"'{Stringify(callee)}' is not callable", e.Line);
                 if (fn.Arity != -1 && fn.Arity != args.Count)
-                    throw new LuxError($"Expected {fn.Arity} argument(s) but got {args.Count}", e.Line);
+                    throw Error($"Expected {fn.Arity} argument(s) but got {args.Count}", e.Line);
                 return (fn, args, null);
             }
         }
@@ -849,6 +831,7 @@ namespace Lux
             if      (e.Callee is GetExpr   gx) callName = gx.Property;
             else if (e.Callee is IdentExpr ix) callName = ix.Name;
             else                               callName = "<anonymous>";
+            _currentLine = e.Line;
             PushCall(callName, e.Line);
             try
             {
@@ -871,8 +854,8 @@ namespace Lux
                 LuxDict d   => GetDictMethod(d, e.Property, e.Line),
                 LuxObject o => o.Fields.TryGetValue(e.Property, out object? v)
                                ? (v is LiveProperty lp ? lp.Getter() : v)
-                               : throw new LuxError($"Object has no property '{e.Property}'", e.Line),
-                _ => throw new LuxError($"'{TypeOf(obj)}' has no property '{e.Property}'", e.Line),
+                               : throw Error($"Object has no property '{e.Property}'", e.Line),
+                _ => throw Error($"'{TypeOf(obj)}' has no property '{e.Property}'", e.Line),
             };
         }
 
@@ -886,9 +869,9 @@ namespace Lux
             {
                 var key = EnsureDictKey(index, e.Line);
                 if (dict.Items.TryGetValue(key, out object? v)) return v;
-                throw new LuxError($"Key '{Stringify(index)}' not found in dict", e.Line);
+                throw Error($"Key '{Stringify(index)}' not found in dict", e.Line);
             }
-            throw new LuxError($"'{TypeOf(obj)}' does not support indexing", e.Line);
+            throw Error($"'{TypeOf(obj)}' does not support indexing", e.Line);
         }
 
         private object? EvalDictLit(DictLit d)
@@ -896,7 +879,7 @@ namespace Lux
             var dict = new LuxDict();
             foreach (var (k, v) in d.Pairs)
             {
-                var key = EnsureDictKey(Eval(k), 0);
+                var key = EnsureDictKey(Eval(k), _currentLine);
                 dict.Items[key] = Eval(v);
             }
             return dict;
@@ -986,7 +969,7 @@ namespace Lux
                 case "pop":
                     return new NativeFunc("pop", 0, (_, _) =>
                     {
-                        if (l.Items.Count == 0) throw new LuxError("pop from empty list", line);
+                        if (l.Items.Count == 0) throw Error("pop from empty list", line);
                         var v = l.Items[l.Items.Count - 1];
                         l.Items.RemoveAt(l.Items.Count - 1);
                         return v;
@@ -1014,7 +997,7 @@ namespace Lux
 
         // ── Helpers ───────────────────────────────────────────────────────────
 
-        private static object? Add(object? left, object? right, int line)
+        private object? Add(object? left, object? right, int line)
         {
             if (left is double a && right is double b)   return a + b;
             if (left is string || right is string)        return Stringify(left) + Stringify(right);
@@ -1024,18 +1007,18 @@ namespace Lux
                 result.Items.AddRange(lb.Items);
                 return result;
             }
-            throw new LuxError($"Cannot add '{TypeOf(left)}' and '{TypeOf(right)}'", line);
+            throw Error($"Cannot add '{TypeOf(left)}' and '{TypeOf(right)}'", line);
         }
 
-        private static double NumOp(object? l, object? r, Token op, Func<double, double, double> fn)
+        private double NumOp(object? l, object? r, Token op, Func<double, double, double> fn)
             => fn(EnsureNum(l, op), EnsureNum(r, op));
 
-        private static bool NumComp(object? l, object? r, Token op, Func<double, double, bool> fn)
+        private bool NumComp(object? l, object? r, Token op, Func<double, double, bool> fn)
             => fn(EnsureNum(l, op), EnsureNum(r, op));
 
-        private static double EnsureNum(object? v, Token op)
+        private double EnsureNum(object? v, Token op)
             => v is double d ? d
-               : throw new LuxError($"Operand for '{op.Lexeme}' must be a number, got {TypeOf(v)}", op.Line);
+               : throw Error($"Operand for '{op.Lexeme}' must be a number, got {TypeOf(v)}", op.Line);
 
         internal static bool IsEqual(object? a, object? b)
         {
@@ -1056,12 +1039,12 @@ namespace Lux
             return true;
         }
 
-        private static double LenOf(object? v)
+        private double LenOf(object? v)
         {
             if (v is string s)  return s.Length;
             if (v is LuxList l) return l.Items.Count;
             if (v is LuxDict d) return d.Items.Count;
-            throw new LuxError($"'{TypeOf(v)}' has no length", 0);
+            throw Error($"'{TypeOf(v)}' has no length", _currentLine);
         }
 
         internal static string TypeOf(object? v)
@@ -1077,24 +1060,24 @@ namespace Lux
             return v.GetType().Name;
         }
 
-        private static double ToNum(object? v)
+        private double ToNum(object? v)
         {
             if (v is double d)  return d;
             if (v is bool b)    return b ? 1 : 0;
             if (v is string s && double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out double r))
                 return r;
-            throw new LuxError($"Cannot convert '{TypeOf(v)}' to number", 0);
+            throw Error($"Cannot convert '{TypeOf(v)}' to number", _currentLine);
         }
 
-        private static LuxList MakeRange(List<object?> args)
+        private LuxList MakeRange(List<object?> args)
         {
             double start, end, step;
             switch (args.Count)
             {
-                case 1: start = 0;                     end = ToDoubleArg(args[0]); step = 1; break;
-                case 2: start = ToDoubleArg(args[0]);  end = ToDoubleArg(args[1]); step = 1; break;
-                case 3: start = ToDoubleArg(args[0]);  end = ToDoubleArg(args[1]); step = ToDoubleArg(args[2]); break;
-                default: throw new LuxError("range() takes 1-3 arguments", 0);
+                case 1: start = 0;                    end = ToDoubleArg(args[0]); step = 1; break;
+                case 2: start = ToDoubleArg(args[0]); end = ToDoubleArg(args[1]); step = 1; break;
+                case 3: start = ToDoubleArg(args[0]); end = ToDoubleArg(args[1]); step = ToDoubleArg(args[2]); break;
+                default: throw Error("range() takes 1-3 arguments", _currentLine);
             }
             var list = new LuxList();
             for (double i = start; step > 0 ? i < end : i > end; i += step)
@@ -1102,24 +1085,24 @@ namespace Lux
             return list;
         }
 
-        private static double ToDoubleArg(object? v)
-            => v is double d ? d : throw new LuxError("range() arguments must be numbers", 0);
+        private double ToDoubleArg(object? v)
+            => v is double d ? d : throw Error("range() arguments must be numbers", _currentLine);
 
-        private static int CheckIndex(object? index, int count, int line)
+        private int CheckIndex(object? index, int count, int line)
         {
-            if (index is not double d) throw new LuxError("Index must be a number", line);
+            if (index is not double d) throw Error("Index must be a number", line);
             int i = (int)d;
             if (i < 0) i += count;
             if (i < 0 || i >= count)
-                throw new LuxError($"Index {(int)d} out of range (size {count})", line);
+                throw Error($"Index {(int)d} out of range (size {count})", line);
             return i;
         }
 
-        private static object EnsureDictKey(object? v, int line)
+        private object EnsureDictKey(object? v, int line)
         {
             if (v is double || v is string || v is bool)
                 return v!;
-            throw new LuxError($"Dict keys must be a number, string, or bool — got '{TypeOf(v)}'", line);
+            throw Error($"Dict keys must be a number, string, or bool — got '{TypeOf(v)}'", line);
         }
 
         internal static string Stringify(object? v)

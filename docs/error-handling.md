@@ -17,11 +17,12 @@ throw {"code": 404, "msg": "not found"}
 
 ## try / catch
 
-`catch` binds a **error object** to the given variable. The error object always has three fields:
+`catch` binds a **error object** to the given variable. The error object always has four fields:
 
 | Field | Type | Description |
 |---|---|---|
-| `value` | any | The thrown payload (string, dict, object, …) or the runtime-error message |
+| `kind` | string | `"throw"` for explicit `throw` statements; `"runtime"` for interpreter errors (type errors, division by zero, etc.) |
+| `value` | any | The thrown payload (string, dict, object, …) or the runtime-error message string |
 | `line` | number | The source line where the error was raised |
 | `stacktrace` | list of strings | Call-stack frames at the time of the error, most-recent first |
 
@@ -29,13 +30,14 @@ throw {"code": 404, "msg": "not found"}
 try {
     // code that might fail
 } catch (e) {
-    print(e.value)       // the thrown value or error message
+    print(e.kind)        // "throw" or "runtime"
+    print(e.value)       // the thrown value, or the runtime-error message string
     print(e.line)        // line number of the throw / runtime error
     print(e.stacktrace)  // list of "at <fn> (line <n>)" strings
 }
 ```
 
-Runtime errors (e.g. division by zero, type errors) are also caught and their message is exposed as `e.value`.
+Use `e.kind` to distinguish user `throw`s from interpreter runtime errors (type errors, division by zero, etc.).
 
 ---
 
@@ -168,7 +170,7 @@ Exits with code `1` and prints each error to stderr if errors are found.
 ## Notes
 
 - There is no `finally` block.
-- `catch` catches both explicit `throw` values and interpreter-level runtime errors.
+- `catch` catches both explicit `throw` values and interpreter-level runtime errors. Use `e.kind` (`"throw"` or `"runtime"`) to tell them apart.
 - A `throw` inside a `catch` block will propagate to an outer `try/catch` or terminate the script.
 - The `stacktrace` list is empty when the error is raised at the top level (outside any function call).
 

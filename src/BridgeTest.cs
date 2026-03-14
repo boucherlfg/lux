@@ -59,7 +59,7 @@ fun sumList(items) {
     return total
 }
 ";
-            interp.Run(source);
+            interp.Evaluate(source);
 
             // 5. Call a Lux function from C# (returns a typed value)
             string result = interp.CallFunction<string>("onEvent", "score", 42.0);
