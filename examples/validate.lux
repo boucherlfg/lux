@@ -1,0 +1,32 @@
+// ── validate.lux ──────────────────────────────────────────────────────────────
+// This file contains valid Lux syntax and is used to demonstrate the
+// --check flag and the Interpreter.Validate() C# API.
+//
+// Run syntax check only (no execution):
+//   lux --check examples/validate.lux
+//   → examples/validate.lux: OK
+//
+// Run normally:
+//   lux examples/validate.lux
+
+fun greet(name) {
+    return "Hello, " + name + "!"
+}
+
+fun add(a, b) {
+    return a + b
+}
+
+print(greet("World"))
+print("1 + 2 = " + str(add(1, 2)))
+
+let items = [10, 20, 30]
+let total = 0
+for x in items { total += x }
+print("total: " + str(total))
+
+try {
+    throw "test error"
+} catch (e) {
+    print("caught: " + e.value)
+}
