@@ -10,7 +10,7 @@
         "projectUniqueName": "/home/runner/work/lux/lux/LuxLang.Lib.csproj",
         "projectName": "LuxLang",
         "projectPath": "/home/runner/work/lux/lux/LuxLang.Lib.csproj",
-        "packagesPath": "/home/runner/.nuget/packages/",
+        "packagesPath": "/tmp/codeql-scratch-03b1bdb95b95931f/dbs/csharp/working/packages",
         "outputPath": "/home/runner/work/lux/lux/obj/Lib/",
         "projectStyle": "PackageReference",
         "configFilePaths": [

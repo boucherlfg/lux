@@ -535,6 +535,35 @@ namespace Lux
             }
         }
 
+        /// <summary>
+        /// Lexes and parses <paramref name="source"/> without executing it.
+        /// Returns the list of syntax errors found; an empty list means the source is valid.
+        /// </summary>
+        public IReadOnlyList<ValidationError> Validate(string source)
+        {
+            var errors = new List<ValidationError>();
+            List<Token> tokens;
+            try
+            {
+                tokens = new Lexer(source).Tokenize();
+            }
+            catch (LexError e)
+            {
+                errors.Add(new ValidationError("lex", e.Line, e.Message));
+                return errors;
+            }
+            try
+            {
+                new Parser(tokens).Parse();
+            }
+            catch (ParseError e)
+            {
+                errors.Add(new ValidationError("parse", e.Line, e.Message));
+                return errors;
+            }
+            return errors;
+        }
+
         internal void ExecuteBlock(List<Stmt> stmts, LuxEnvironment env)
         {
             var prev = _env;

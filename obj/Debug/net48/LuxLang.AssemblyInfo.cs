@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("lux")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+321a4b7c0bc042ff499c103903cc4cc0d900088e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a41e67c0ed46f88f6383c437fcda81d3786df353")]
 [assembly: System.Reflection.AssemblyProductAttribute("lux")]
 [assembly: System.Reflection.AssemblyTitleAttribute("lux")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

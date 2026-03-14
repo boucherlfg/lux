@@ -415,7 +415,7 @@
     ]
   },
   "packageFolders": {
-    "/home/runner/.nuget/packages/": {}
+    "/tmp/codeql-scratch-03b1bdb95b95931f/dbs/csharp/working/packages": {}
   },
   "project": {
     "version": "1.0.0",
@@ -423,7 +423,7 @@
       "projectUniqueName": "/home/runner/work/lux/lux/LuxLang.csproj",
       "projectName": "lux",
       "projectPath": "/home/runner/work/lux/lux/LuxLang.csproj",
-      "packagesPath": "/home/runner/.nuget/packages/",
+      "packagesPath": "/tmp/codeql-scratch-03b1bdb95b95931f/dbs/csharp/working/packages",
       "outputPath": "/home/runner/work/lux/lux/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [

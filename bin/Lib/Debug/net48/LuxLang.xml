@@ -7,6 +7,18 @@
         <member name="P:Lux.LuxError.CallStack">
             <summary>Snapshot of the Lux call stack at the point the error was raised.</summary>
         </member>
+        <member name="T:Lux.ValidationError">
+            <summary>A single syntax error returned by <see cref="M:Lux.Interpreter.Validate(System.String)"/>.</summary>
+        </member>
+        <member name="P:Lux.ValidationError.Kind">
+            <summary>Phase where the error was detected: <c>"lex"</c> or <c>"parse"</c>.</summary>
+        </member>
+        <member name="P:Lux.ValidationError.Line">
+            <summary>1-based source line number.</summary>
+        </member>
+        <member name="P:Lux.ValidationError.Message">
+            <summary>Human-readable description of the error.</summary>
+        </member>
         <member name="T:Lux.IfLetStmt">
             <summary>if-let binding: evaluates <c>Init</c>, binds result to <c>Var</c> if truthy, else runs optional <c>Else</c> branch (may be another <c>IfLetStmt</c>, <c>IfStmt</c>, or a plain <c>BlockStmt</c>).</summary>
         </member>
@@ -154,6 +166,12 @@
             Returns the names of all globals defined by user scripts (excludes built-ins such as
             <c>print</c>, <c>import</c>, <c>getType</c>, etc.).
             Used by <c>import()</c> to build the exported namespace object.
+            </summary>
+        </member>
+        <member name="M:Lux.Interpreter.Validate(System.String)">
+            <summary>
+            Lexes and parses <paramref name="source"/> without executing it.
+            Returns the list of syntax errors found; an empty list means the source is valid.
             </summary>
         </member>
         <member name="M:Lux.Interpreter.ResolveCall(Lux.CallExpr)">
