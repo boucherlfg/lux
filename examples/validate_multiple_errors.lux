@@ -1,0 +1,15 @@
+// ── validate_multiple_errors.lux ──────────────────────────────────────────────
+// Intentional errors to demonstrate that --check reports ALL errors, not just
+// the first one.
+//
+// Run syntax check:
+//   lux --check examples/validate_multiple_errors.lux
+//   → three errors should be reported (two lex, one parse)
+//
+// NOTE: This file cannot be executed; it exists solely as a test fixture.
+
+let a = @           // lex error: unexpected character '@'
+let b = #           // lex error: unexpected character '#'
+fun broken(x, y {   // parse error: missing ')' in parameter list
+    return x + y
+}

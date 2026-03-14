@@ -7,7 +7,17 @@ using Lux;
 
 if (args.Length > 0)
 {
-    Environment.Exit(RunFile(args[0]) ? 0 : 1);
+    if (args[0] == "--check")
+    {
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("lux: --check requires a file path");
+            Environment.Exit(1);
+        }
+        Environment.Exit(CheckFile(args[1]) ? 0 : 1);
+    }
+    else
+        Environment.Exit(RunFile(args[0]) ? 0 : 1);
 }
 else
 {
@@ -27,6 +37,26 @@ static bool RunFile(string path)
     interp.BasePath = Path.GetDirectoryName(Path.GetFullPath(path));
     interp.FilePath = Path.GetFullPath(path);
     return RunSource(File.ReadAllText(path), interp);
+}
+
+// ── Syntax check (no execution) ───────────────────────────────────────────────
+
+static bool CheckFile(string path)
+{
+    if (!File.Exists(path))
+    {
+        Console.Error.WriteLine($"lux: file not found: '{path}'");
+        return false;
+    }
+    var errors = new Interpreter().Validate(File.ReadAllText(path));
+    if (errors.Count == 0)
+    {
+        Console.WriteLine($"{path}: OK");
+        return true;
+    }
+    foreach (var e in errors)
+        Console.Error.WriteLine($"{path}: {e}");
+    return false;
 }
 
 // ── REPL ──────────────────────────────────────────────────────────────────────

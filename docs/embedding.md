@@ -27,6 +27,28 @@ interp.Run(File.ReadAllText("script.lux"));
 
 ---
 
+## Validating scripts (syntax check without execution)
+
+Use `Validate` to lex and parse a source string without executing it. This is ideal for a build/lint step.
+
+```csharp
+var errors = interp.Validate(source);
+
+if (errors.Count == 0)
+{
+    Console.WriteLine("Syntax OK.");
+}
+else
+{
+    foreach (var e in errors)
+        Console.Error.WriteLine(e);  // e.g. "[parse error] line 3: Expected '}', got 'EOF'"
+}
+```
+
+`Validate` always returns a list (never throws). **All errors are collected** — the lexer recovers past bad characters and the parser uses panic-mode synchronisation to resume after each error, so a single call reports every problem in the file. Each `ValidationError` has `Kind` (`"lex"` or `"parse"`), `Line`, and `Message`.
+
+---
+
 ## Exposing C# functions to Lux
 
 Use `Register` to make a C# delegate callable from Lux scripts.

@@ -1,0 +1,16 @@
+// ── validate_syntax_error.lux ─────────────────────────────────────────────────
+// This file contains INTENTIONAL syntax errors to demonstrate what
+// the --check flag and Interpreter.Validate() report.
+//
+// Run syntax check:
+//   lux --check examples/validate_syntax_error.lux
+//   → examples/validate_syntax_error.lux: [parse error] line 11: ...
+//
+// NOTE: This file cannot be executed; it exists solely as a test fixture
+// for the validation feature.
+
+fun broken(a, b {     // missing closing ')' in parameter list
+    return a + b
+}
+
+let x = 1 +           // incomplete expression — no right-hand operand

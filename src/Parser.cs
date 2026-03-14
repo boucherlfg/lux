@@ -7,6 +7,7 @@ namespace Lux
     {
         private readonly List<Token> _tokens;
         private int _current = 0;
+        private List<ValidationError>? _errors;
 
         public Parser(List<Token> tokens) => _tokens = tokens;
 
@@ -19,6 +20,61 @@ namespace Lux
                 if (!IsAtEnd()) stmts.Add(ParseStmt());
             }
             return stmts;
+        }
+
+        /// <summary>
+        /// Like <see cref="Parse"/> but collects all parse errors into
+        /// <paramref name="errors"/> instead of stopping at the first one.
+        /// Uses panic-mode synchronisation to resume after each error.
+        /// </summary>
+        public List<Stmt> Parse(List<ValidationError> errors)
+        {
+            _errors = errors;
+            var stmts = new List<Stmt>();
+            while (!IsAtEnd())
+            {
+                SkipSemicolons();
+                if (!IsAtEnd()) TryParseStmtInto(stmts);
+            }
+            return stmts;
+        }
+
+        private void TryParseStmtInto(List<Stmt> stmts)
+        {
+            try { stmts.Add(ParseStmt()); }
+            catch (ParseError e)
+            {
+                _errors!.Add(new ValidationError("parse", e.Line, e.Message));
+                Synchronize();
+            }
+        }
+
+        /// <summary>
+        /// Panic-mode recovery: advance until a likely statement boundary.
+        /// </summary>
+        private void Synchronize()
+        {
+            while (!IsAtEnd())
+            {
+                if (Previous().Type == TokenType.Semicolon) return;
+                switch (Peek().Type)
+                {
+                    case TokenType.Fun:
+                    case TokenType.Let:
+                    case TokenType.For:
+                    case TokenType.If:
+                    case TokenType.While:
+                    case TokenType.Return:
+                    case TokenType.Break:
+                    case TokenType.Continue:
+                    case TokenType.Try:
+                    case TokenType.Throw:
+                    case TokenType.LBrace:
+                    case TokenType.RBrace:
+                        return;
+                }
+                Advance();
+            }
         }
 
         // ── Statements ────────────────────────────────────────────────────────
@@ -165,7 +221,11 @@ namespace Lux
             while (!Check(TokenType.RBrace) && !IsAtEnd())
             {
                 SkipSemicolons();
-                if (!Check(TokenType.RBrace)) stmts.Add(ParseStmt());
+                if (!Check(TokenType.RBrace))
+                {
+                    if (_errors != null) TryParseStmtInto(stmts);
+                    else stmts.Add(ParseStmt());
+                }
             }
             Consume(TokenType.RBrace, "'}'");
             return new BlockStmt(stmts);

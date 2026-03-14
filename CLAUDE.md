@@ -54,6 +54,8 @@ source string
   → Interpreter  (src/Interpreter.cs) executes tree-walk
 ```
 
+`Interpreter.Validate(source)` runs the same Lexer → Parser path but with error recovery: `Lexer.TokenizeAll` catches each `LexError` and continues; `Parser.Parse(errors)` uses panic-mode synchronisation (skip to next statement boundary) after each `ParseError`. All errors are collected and returned; the AST is discarded.
+
 ### Key files
 
 | File | Purpose |
@@ -63,7 +65,7 @@ source string
 | `src/LuxEnvironment.cs` | Linked-list scope chain; `Define`/`Get`/`Set` walk the chain |
 | `src/Interpreter.cs` | Tree-walk evaluator; also defines `LuxFunction`, `LuxObject`, `LuxList`, `LuxDict`, `NativeFunc`, and all built-in functions |
 | `src/LuxBridge.cs` | C# ↔ Lux interop: `Register`, `RegisterObject`, `RegisterObjectLive`, `CallFunction<T>`, `GetGlobal<T>`, `SetGlobal` |
-| `src/Errors.cs` | `LexError`, `ParseError`, `LuxError` (all carry a `Line` number) |
+| `src/Errors.cs` | `LexError`, `ParseError`, `LuxError` (all carry a `Line` number); `ValidationError` returned by `Validate` |
 | `src/Program.cs` | CLI entry point: file runner + REPL |
 
 ### Object model

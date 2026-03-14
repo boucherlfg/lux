@@ -123,6 +123,48 @@ If a `throw` or runtime error is not caught by any `try/catch`, the interpreter 
 
 ---
 
+## Validation (syntax checking without execution)
+
+Use `Interpreter.Validate(source)` to check a Lux source string for lex and parse errors **without executing it**. This is useful as a build/lint step.
+
+```csharp
+var interp = new Interpreter();
+var errors = interp.Validate(source);
+
+if (errors.Count == 0)
+{
+    Console.WriteLine("No syntax errors.");
+}
+else
+{
+    foreach (var e in errors)
+        Console.Error.WriteLine(e);  // e.g. "[parse error] line 3: Expected '}', got 'EOF'"
+}
+```
+
+Each `ValidationError` exposes:
+
+| Property | Type | Description |
+|---|---|---|
+| `Kind` | `string` | `"lex"` or `"parse"` |
+| `Line` | `int` | 1-based source line number |
+| `Message` | `string` | Human-readable error description |
+
+`Validate` never throws — it always returns a (possibly empty) list. **All errors are reported**, not just the first one: the lexer uses error recovery to continue past bad characters, and the parser uses panic-mode synchronisation to resume at the next statement boundary after each parse error.
+
+### CLI: `--check`
+
+You can validate a file from the command line without running it:
+
+```
+lux --check path/to/script.lux
+```
+
+Exits with code `0` and prints `<path>: OK` if there are no errors.  
+Exits with code `1` and prints each error to stderr if errors are found.
+
+---
+
 ## Notes
 
 - There is no `finally` block.

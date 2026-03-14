@@ -46,6 +46,22 @@ namespace Lux
             return _tokens;
         }
 
+        /// <summary>
+        /// Like <see cref="Tokenize"/> but collects all lex errors into
+        /// <paramref name="errors"/> instead of stopping at the first one.
+        /// </summary>
+        public List<Token> TokenizeAll(List<ValidationError> errors)
+        {
+            while (!IsAtEnd())
+            {
+                _start = _current;
+                try { ScanToken(); }
+                catch (LexError e) { errors.Add(new ValidationError("lex", e.Line, e.Message)); }
+            }
+            _tokens.Add(new Token(TokenType.EOF, "", null, _line));
+            return _tokens;
+        }
+
         private void ScanToken()
         {
             char c = Advance();

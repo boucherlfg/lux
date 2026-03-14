@@ -26,4 +26,24 @@ namespace Lux
             CallStack = Interpreter.CaptureCallStack();
         }
     }
+
+    /// <summary>A single syntax error returned by <see cref="Interpreter.Validate"/>.</summary>
+    public sealed class ValidationError
+    {
+        /// <summary>Phase where the error was detected: <c>"lex"</c> or <c>"parse"</c>.</summary>
+        public string Kind    { get; }
+        /// <summary>1-based source line number.</summary>
+        public int    Line    { get; }
+        /// <summary>Human-readable description of the error.</summary>
+        public string Message { get; }
+
+        public ValidationError(string kind, int line, string message)
+        {
+            Kind    = kind;
+            Line    = line;
+            Message = message;
+        }
+
+        public override string ToString() => $"[{Kind} error] line {Line}: {Message}";
+    }
 }
