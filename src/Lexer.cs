@@ -112,7 +112,8 @@ namespace Lux
             while (Peek() != '"' && !IsAtEnd())
             {
                 if (Peek() == '\n') _line++;
-                Advance();
+                if (Peek() == '\\') Advance(); // skip escape char so \" doesn't end the string early
+                if (!IsAtEnd()) Advance();
             }
             if (IsAtEnd()) throw new LexError("Unterminated string", _line);
             Advance(); // closing "

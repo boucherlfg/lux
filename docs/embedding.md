@@ -10,7 +10,7 @@ Reference the `LuxLang.Lib` project (or its compiled DLL) from your C# project, 
 using Lux;
 
 var interp = new Interpreter();
-interp.Run("print(\"hello from Lux\")");
+interp.Evaluate("print(\"hello from Lux\")");
 ```
 
 ---
@@ -19,10 +19,10 @@ interp.Run("print(\"hello from Lux\")");
 
 ```csharp
 // From a source string
-interp.Run(luxSourceCode);
+interp.Evaluate(luxSourceCode);
 
 // From a file
-interp.Run(File.ReadAllText("script.lux"));
+interp.Evaluate(File.ReadAllText("script.lux"));
 ```
 
 ---
@@ -110,7 +110,7 @@ fun greet(name) {
 ```
 
 ```csharp
-interp.Run(File.ReadAllText("script.lux"));
+interp.Evaluate(File.ReadAllText("script.lux"));
 
 // Raw result (object?)
 var raw = interp.CallFunction("greet", "World");
@@ -165,7 +165,7 @@ An uncaught Lux `throw` surfaces as `LuxThrowException`, which also exposes `Val
 ```csharp
 try
 {
-    interp.Run(source);
+    interp.Evaluate(source);
 }
 catch (LuxThrowException ex)
 {
@@ -203,7 +203,7 @@ interp.Register("log",  (Action<string>)(Console.WriteLine));
 interp.Register("now",  (Func<string>)(() => DateTime.UtcNow.ToString("u")));
 
 // Run the script
-interp.Run(@"
+interp.Evaluate(@"
     log(""Script started at "" + now())
     fun add(a, b) { return a + b }
 ");
