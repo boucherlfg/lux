@@ -45,7 +45,7 @@ else
 }
 ```
 
-`Validate` always returns a list (never throws). Each `ValidationError` has `Kind` (`"lex"` or `"parse"`), `Line`, and `Message`.
+`Validate` always returns a list (never throws). **All errors are collected** — the lexer recovers past bad characters and the parser uses panic-mode synchronisation to resume after each error, so a single call reports every problem in the file. Each `ValidationError` has `Kind` (`"lex"` or `"parse"`), `Line`, and `Message`.
 
 ---
 

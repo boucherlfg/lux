@@ -150,7 +150,7 @@ Each `ValidationError` exposes:
 | `Line` | `int` | 1-based source line number |
 | `Message` | `string` | Human-readable error description |
 
-`Validate` never throws — it always returns a (possibly empty) list.
+`Validate` never throws — it always returns a (possibly empty) list. **All errors are reported**, not just the first one: the lexer uses error recovery to continue past bad characters, and the parser uses panic-mode synchronisation to resume at the next statement boundary after each parse error.
 
 ### CLI: `--check`
 
