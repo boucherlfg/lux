@@ -1,0 +1,64 @@
+// Demonstrates the richer error object exposed to catch blocks.
+//
+// Every caught error has three fields:
+//   e.value      — the thrown payload (string, dict, object, …) or the
+//                  runtime-error message string
+//   e.line       — the line number where the error was raised
+//   e.stacktrace — a list of call-stack frame strings, most-recent first
+
+// ── 1. Throw a plain string ───────────────────────────────────────────────────
+try {
+    throw "oops"
+} catch (e) {
+    print("value:      " + e.value)
+    print("line:       " + str(e.line))
+    print("stacktrace: " + str(e.stacktrace))
+}
+
+print("---")
+
+// ── 2. Throw a dict payload ───────────────────────────────────────────────────
+try {
+    throw {"code": 404, "msg": "not found"}
+} catch (e) {
+    print("code: " + str(e.value["code"]) + ", msg: " + e.value["msg"])
+    print("line: " + str(e.line))
+}
+
+print("---")
+
+// ── 3. Runtime error includes call-stack ─────────────────────────────────────
+fun level2() {
+    let x = 1 / 0   // division by zero at line 32
+}
+
+fun level1() {
+    level2()
+}
+
+try {
+    level1()
+} catch (e) {
+    print("value:      " + e.value)
+    print("line:       " + str(e.line))
+    print("stacktrace:")
+    let i = 0
+    while (i < len(e.stacktrace)) {
+        print("  " + e.stacktrace[i])
+        i = i + 1
+    }
+}
+
+print("---")
+
+// ── 4. Catching a thrown object payload ──────────────────────────────────────
+fun crasher() {
+    throw {"code": 500, "msg": "internal error"}
+}
+
+try {
+    crasher()
+} catch (e) {
+    print("caught crasher: code=" + str(e.value["code"]))
+    print("  thrown at line " + str(e.line) + ", stack: " + str(e.stacktrace))
+}

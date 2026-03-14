@@ -1,6 +1,6 @@
 is_global = true
 build_property.RootNamespace = Lux
-build_property.ProjectDir = C:\Users\regli\Desktop\my_language\
+build_property.ProjectDir = /home/runner/work/lux/lux/
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.CsWinRTUseWindowsUIXamlProjections = false

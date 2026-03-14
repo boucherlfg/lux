@@ -1,8 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "cyN4nM4EMC4=",
+  "dgSpecHash": "mmv6mGgbFRA=",
   "success": true,
-  "projectFilePath": "C:\\Users\\regli\\Desktop\\my_language\\LuxLang.Lib.csproj",
-  "expectedPackageFiles": [],
+  "projectFilePath": "/home/runner/work/lux/lux/LuxLang.Lib.csproj",
+  "expectedPackageFiles": [
+    "/home/runner/.nuget/packages/microsoft.netframework.referenceassemblies/1.0.3/microsoft.netframework.referenceassemblies.1.0.3.nupkg.sha512",
+    "/home/runner/.nuget/packages/microsoft.netframework.referenceassemblies.net48/1.0.3/microsoft.netframework.referenceassemblies.net48.1.0.3.nupkg.sha512"
+  ],
   "logs": []
 }
