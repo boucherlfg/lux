@@ -542,25 +542,8 @@ namespace Lux
         public IReadOnlyList<ValidationError> Validate(string source)
         {
             var errors = new List<ValidationError>();
-            List<Token> tokens;
-            try
-            {
-                tokens = new Lexer(source).Tokenize();
-            }
-            catch (LexError e)
-            {
-                errors.Add(new ValidationError("lex", e.Line, e.Message));
-                return errors;
-            }
-            try
-            {
-                new Parser(tokens).Parse();
-            }
-            catch (ParseError e)
-            {
-                errors.Add(new ValidationError("parse", e.Line, e.Message));
-                return errors;
-            }
+            var tokens = new Lexer(source).TokenizeAll(errors);
+            new Parser(tokens).Parse(errors);
             return errors;
         }
 
